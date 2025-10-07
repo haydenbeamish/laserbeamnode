@@ -1,19 +1,15 @@
-
-
 let express = require("express");
 let readXlsxFile = require("read-excel-file/node");
 let { StatsDetails } = require("./stats");
-let {FundsDetails} = require("./funds.js");
-let {TextDetails} = require("./Text.js");
-let {Exposure} = require('./exposure.js');
-let {Performance} = require('./performance.js')
-let {Holdings} = require('./holdings.js')
-let {GetPosts} = require('./getPost.js')
+let { FundsDetails } = require("./funds.js");
+let { TextDetails } = require("./Text.js");
+let { Exposure } = require("./exposure.js");
+let { Performance } = require("./performance.js");
+let { Holdings } = require("./holdings.js");
+let { GetPosts } = require("./getPost.js");
 
 const cors = require("cors");
 const fetch = require("node-fetch");
-
-
 
 let app = express();
 let data;
@@ -24,20 +20,27 @@ app.get("/", (req, res) => {
   res.send("hi , first node js project !!");
 });
 
-
 app.get("/posts", async (req, res) => {
-
   try {
-    const response = await fetch("https://api.beehiiv.com/v2/publications/pub_ca643944-2ed9-48dc-8eff-711fc225e133/posts", {
+    const expandParams = ["free_web_content"]
+      .map((e) => `expand[]=${e}`)
+      .join("&");
+
+    const url = `https://api.beehiiv.com/v2/publications/pub_ca643944-2ed9-48dc-8eff-711fc225e133/posts?${expandParams}&audience=all&platform=all&status=confirmed&limit=50&page=1&order_by=publish_date&direction=desc`;
+
+    const response = await fetch(url, {
       headers: {
-        Authorization: "Bearer Uc0kKMmsqoEX0mlip2PR0N3RTWM07NBvkYRas3cFKMRF4UXe6uCbnre39fhRNJ1j",
+        Authorization:
+          "Bearer Uc0kKMmsqoEX0mlip2PR0N3RTWM07NBvkYRas3cFKMRF4UXe6uCbnre39fhRNJ1j",
       },
     });
 
     if (!response.ok) {
-      const text = await response.text(); 
-      // console.log("Beehiiv response:", text);
-      return res.status(response.status).json({ message: "Beehiiv API error", details: text });
+      const text = await response.text();
+      return res.status(response.status).json({
+        message: "Beehiiv API error",
+        details: text,
+      });
     }
 
     const data = await response.json();
@@ -48,15 +51,13 @@ app.get("/posts", async (req, res) => {
   }
 });
 
-
 app.get("/stats", StatsDetails);
 app.get("/funds", FundsDetails);
-app.get("/text",TextDetails)
-app.get('/exposure',Exposure )
-app.get('/performance',Performance)
-app.get('/holdings',Holdings )
-app.get('/selectedpost/:id',GetPosts)
-
+app.get("/text", TextDetails);
+app.get("/exposure", Exposure);
+app.get("/performance", Performance);
+app.get("/holdings", Holdings);
+app.get("/selectedpost/:id", GetPosts);
 
 app.listen(5003, () => {
   console.log("Connected");
