@@ -10,7 +10,11 @@ const Holdings = async (req, res) => {
       const obj = {};
 
       headers.forEach((h1, j) => {
-        obj[h1] = i[j];
+        if (h1 === "Weight" && i[j] !== null) {
+          obj[h1] = Math.round(i[j] * 100);
+        } else {
+          obj[h1] = i[j];
+        }
       });
       return obj;
     });
