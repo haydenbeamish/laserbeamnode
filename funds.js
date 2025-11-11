@@ -12,6 +12,11 @@ const FundsDetails = async (req, res) => {
       headers.forEach((h1, j) => {
         obj[h1] = i[j];
       });
+      
+      if ((obj.key === "Mgmt. Fee" || obj.key === "Perf. Fee") && obj.value !== null) {
+        obj.value = Math.round(obj.value * 100);
+      }
+      
       return obj;
     });
 
