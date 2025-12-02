@@ -2,7 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
 const path = require("path");
-const { Pool } = require("@neondatabase/serverless");
+const { Pool, neonConfig } = require("@neondatabase/serverless");
+const ws = require("ws");
+
+neonConfig.webSocketConstructor = ws;
 
 const app = express();
 app.use(cors());
