@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laser Beam Capital - Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
+    .login-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .login-box { background: #1a1a1a; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; }
+    .login-box h1 { margin-bottom: 24px; font-size: 24px; text-align: center; }
+    .admin-container { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #333; }
+    .header h1 { font-size: 24px; }
+    .btn { background: #22c55e; color: #000; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+    .btn:hover { background: #16a34a; }
+    .btn-secondary { background: #333; color: #fff; }
+    .btn-secondary:hover { background: #444; }
+    .btn-logout { background: #ef4444; color: #fff; }
+    .btn-logout:hover { background: #dc2626; }
+    input, select { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #0a0a0a; color: #fff; font-size: 14px; margin-bottom: 16px; }
+    input:focus { outline: none; border-color: #22c55e; }
+    input.changed { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+    label { display: block; margin-bottom: 8px; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .section { background: #1a1a1a; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .section h2 { margin-bottom: 20px; font-size: 18px; color: #22c55e; }
+    .section h3 { margin: 20px 0 12px; font-size: 14px; color: #888; border-top: 1px solid #333; padding-top: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-5 { grid-template-columns: repeat(5, 1fr); }
+    .date-updated { background: #22c55e; color: #000; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+    .save-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; }
+    .changes-indicator { color: #f59e0b; font-size: 14px; }
+    .changes-indicator.hidden { visibility: hidden; }
+    .success-msg { color: #22c55e; font-size: 14px; }
+    .holding-row, .chart-row, .exposure-row { display: flex; gap: 12px; align-items: end; margin-bottom: 12px; }
+    .holding-row input, .chart-row input, .exposure-row input { margin-bottom: 0; }
+    .holding-row .name { flex: 2; }
+    .holding-row .weight { flex: 1; }
+    .chart-row .date { flex: 2; }
+    .chart-row .value { flex: 1; }
+    .exposure-row .name { flex: 2; }
+    .exposure-row .value { flex: 1; }
+    .add-btn { background: #333; color: #22c55e; border: 1px dashed #22c55e; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 8px; }
+    .add-btn:hover { background: #22c55e; color: #000; }
+    .remove-btn { background: #ef4444; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+    .remove-btn:hover { background: #dc2626; }
+    @media (max-width: 768px) { .grid-3, .grid-5 { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="login-container" id="loginContainer">
+    <div class="login-box">
+      <h1>Laser Beam Admin</h1>
+      <form id="loginForm">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="Enter username" required>
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter password" required>
+        <button type="submit" class="btn" style="width: 100%;">Login</button>
+        <p id="loginError" style="color: #ef4444; margin-top: 12px; text-align: center; display: none;"></p>
+      </form>
+    </div>
+  </div>
+
+  <div class="admin-container" id="adminContainer">
+    <div class="header">
+      <h1>Laser Beam Capital - Data Management</h1>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <span class="date-updated" id="dateUpdated">Last updated: --</span>
+        <button class="btn btn-logout" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <form id="dataForm">
+      <div class="section">
+        <h2>Performance Table</h2>
+        <div class="grid grid-5">
+          <div><label>MTD (%)</label><input type="number" step="0.01" name="perf_mtd" data-original=""></div>
+          <div><label>QTD (%)</label><input type="number" step="0.01" name="perf_qtd" data-original=""></div>
+          <div><label>FY26 (%)</label><input type="number" step="0.01" name="perf_fy26" data-original=""></div>
+          <div><label>Annualised (%)</label><input type="number" step="0.01" name="perf_annualised" data-original=""></div>
+        </div>
+        
+        <h3>Performance Chart (Monthly Cumulative Returns)</h3>
+        <div id="chartContainer"></div>
+        <button type="button" class="add-btn" onclick="addChartRow()">+ Add Month</button>
+      </div>
+
+      <div class="section">
+        <h2>Statistics</h2>
+        <div class="grid grid-3">
+          <div><label>Best Month (%)</label><input type="number" step="0.01" name="stats_best_month" data-original=""></div>
+          <div><label>Worst Month (%)</label><input type="number" step="0.01" name="stats_worst_month" data-original=""></div>
+          <div><label>MSCI AW Best (%)</label><input type="number" step="0.01" name="stats_msci_best" data-original=""></div>
+          <div><label>MSCI AW Worst (%)</label><input type="number" step="0.01" name="stats_msci_worst" data-original=""></div>
+          <div><label>Upside Capture (%)</label><input type="number" step="0.01" name="stats_upside" data-original=""></div>
+          <div><label>Downside Capture (%)</label><input type="number" step="0.01" name="stats_downside" data-original=""></div>
+          <div><label>Avg. Net Exposure (%)</label><input type="number" step="0.01" name="stats_avg_net" data-original=""></div>
+          <div><label>Avg. Cash Balance (%)</label><input type="number" step="0.01" name="stats_avg_cash" data-original=""></div>
+          <div><label>Beta (%)</label><input type="number" step="0.01" name="stats_beta" data-original=""></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>The Fund</h2>
+        <div class="grid grid-3">
+          <div><label>Universe</label><input type="text" name="fund_universe" data-original=""></div>
+          <div><label>Holdings</label><input type="text" name="fund_holdings" data-original=""></div>
+          <div><label>Target</label><input type="text" name="fund_target" data-original=""></div>
+          <div><label>Min Investment</label><input type="text" name="fund_min_investment" data-original=""></div>
+          <div><label>Mgmt. Fee (%)</label><input type="number" step="0.01" name="fund_mgmt_fee" data-original=""></div>
+          <div><label>Perf. Fee (%)</label><input type="number" step="0.01" name="fund_perf_fee" data-original=""></div>
+          <div><label>APIR</label><input type="text" name="fund_apir" data-original=""></div>
+          <div><label>Vehicle</label><input type="text" name="fund_vehicle" data-original=""></div>
+          <div><label>PM</label><input type="text" name="fund_pm" data-original=""></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Top Holdings</h2>
+        <div id="holdingsContainer"></div>
+        <button type="button" class="add-btn" onclick="addHoldingRow()">+ Add Holding</button>
+      </div>
+
+      <div class="section">
+        <h2>Net Exposure</h2>
+        <div class="grid grid-3">
+          <div><label>Gross Long (%)</label><input type="number" step="0.01" name="exp_gross_long" data-original=""></div>
+          <div><label>Gross Short (%)</label><input type="number" step="0.01" name="exp_gross_short" data-original=""></div>
+          <div><label>Net (%)</label><input type="number" step="0.01" name="exp_net" data-original=""></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Sector Exposure</h2>
+        <div id="sectorContainer"></div>
+        <button type="button" class="add-btn" onclick="addSectorRow()">+ Add Sector</button>
+      </div>
+
+      <div class="section">
+        <h2>Market Cap Exposure</h2>
+        <div id="marketCapContainer"></div>
+        <button type="button" class="add-btn" onclick="addMarketCapRow()">+ Add Market Cap</button>
+      </div>
+    </form>
+
+    <div class="save-bar">
+      <span class="changes-indicator hidden" id="changesIndicator">You have unsaved changes</span>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <span class="success-msg" id="successMsg" style="display: none;">Data saved successfully!</span>
+        <button type="button" class="btn" onclick="saveData()">Save All Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let originalData = {};
+    let hasChanges = false;
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          sessionStorage.setItem('adminToken', data.token);
+          showAdmin();
+          loadData();
+        } else {
+          document.getElementById('loginError').textContent = data.message;
+          document.getElementById('loginError').style.display = 'block';
+        }
+      } catch (err) {
+        document.getElementById('loginError').textContent = 'Connection error';
+        document.getElementById('loginError').style.display = 'block';
+      }
+    });
+
+    function showAdmin() {
+      document.getElementById('loginContainer').style.display = 'none';
+      document.getElementById('adminContainer').style.display = 'block';
+    }
+
+    function logout() {
+      sessionStorage.removeItem('adminToken');
+      location.reload();
+    }
+
+    async function loadData() {
+      const token = sessionStorage.getItem('adminToken');
+      try {
+        const res = await fetch('/api/admin/data', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (data.success) {
+          populateForm(data.data);
+          originalData = JSON.parse(JSON.stringify(data.data));
+          if (data.data.dateUpdated) {
+            document.getElementById('dateUpdated').textContent = 'Last updated: ' + new Date(data.data.dateUpdated).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load data:', err);
+      }
+    }
+
+    function populateForm(data) {
+      if (data.performance) {
+        setValue('perf_mtd', data.performance.mtd);
+        setValue('perf_qtd', data.performance.qtd);
+        setValue('perf_fy26', data.performance.fy26);
+        setValue('perf_annualised', data.performance.annualised);
+        
+        document.getElementById('chartContainer').innerHTML = '';
+        if (data.performance.chart) {
+          data.performance.chart.forEach(item => addChartRow(item.month, item.value));
+        }
+      }
+      
+      if (data.stats) {
+        setValue('stats_best_month', data.stats.bestMonth);
+        setValue('stats_worst_month', data.stats.worstMonth);
+        setValue('stats_msci_best', data.stats.msciBest);
+        setValue('stats_msci_worst', data.stats.msciWorst);
+        setValue('stats_upside', data.stats.upside);
+        setValue('stats_downside', data.stats.downside);
+        setValue('stats_avg_net', data.stats.avgNet);
+        setValue('stats_avg_cash', data.stats.avgCash);
+        setValue('stats_beta', data.stats.beta);
+      }
+      
+      if (data.funds) {
+        setValue('fund_universe', data.funds.universe);
+        setValue('fund_holdings', data.funds.holdings);
+        setValue('fund_target', data.funds.target);
+        setValue('fund_min_investment', data.funds.minInvestment);
+        setValue('fund_mgmt_fee', data.funds.mgmtFee);
+        setValue('fund_perf_fee', data.funds.perfFee);
+        setValue('fund_apir', data.funds.apir);
+        setValue('fund_vehicle', data.funds.vehicle);
+        setValue('fund_pm', data.funds.pm);
+      }
+      
+      document.getElementById('holdingsContainer').innerHTML = '';
+      if (data.holdings) {
+        data.holdings.forEach(h => addHoldingRow(h.name, h.weight));
+      }
+      
+      if (data.exposure) {
+        setValue('exp_gross_long', data.exposure.grossLong);
+        setValue('exp_gross_short', data.exposure.grossShort);
+        setValue('exp_net', data.exposure.net);
+        
+        document.getElementById('sectorContainer').innerHTML = '';
+        if (data.exposure.sectors) {
+          data.exposure.sectors.forEach(s => addSectorRow(s.name, s.value));
+        }
+        
+        document.getElementById('marketCapContainer').innerHTML = '';
+        if (data.exposure.marketCap) {
+          data.exposure.marketCap.forEach(m => addMarketCapRow(m.name, m.value));
+        }
+      }
+      
+      document.querySelectorAll('input').forEach(input => {
+        input.dataset.original = input.value;
+        input.addEventListener('input', checkChanges);
+      });
+    }
+
+    function setValue(name, value) {
+      const input = document.querySelector(`[name="${name}"]`);
+      if (input && value !== undefined && value !== null) {
+        input.value = value;
+      }
+    }
+
+    function checkChanges() {
+      let changed = false;
+      document.querySelectorAll('input').forEach(input => {
+        if (input.value !== input.dataset.original) {
+          input.classList.add('changed');
+          changed = true;
+        } else {
+          input.classList.remove('changed');
+        }
+      });
+      hasChanges = changed;
+      document.getElementById('changesIndicator').classList.toggle('hidden', !changed);
+    }
+
+    function addChartRow(month = '', value = '') {
+      const container = document.getElementById('chartContainer');
+      const row = document.createElement('div');
+      row.className = 'chart-row';
+      row.innerHTML = `
+        <div class="date"><label>Month (YYYY-MM)</label><input type="month" value="${month}" data-original="${month}"></div>
+        <div class="value"><label>Cumulative Return (%)</label><input type="number" step="0.01" value="${value}" data-original="${value}"></div>
+        <button type="button" class="remove-btn" onclick="this.parentElement.remove(); checkChanges();">Remove</button>
+      `;
+      container.appendChild(row);
+      row.querySelectorAll('input').forEach(i => i.addEventListener('input', checkChanges));
+    }
+
+    function addHoldingRow(name = '', weight = '') {
+      const container = document.getElementById('holdingsContainer');
+      const row = document.createElement('div');
+      row.className = 'holding-row';
+      row.innerHTML = `
+        <div class="name"><label>Name</label><input type="text" value="${name}" data-original="${name}"></div>
+        <div class="weight"><label>Weight (%)</label><input type="number" step="0.01" value="${weight}" data-original="${weight}"></div>
+        <button type="button" class="remove-btn" onclick="this.parentElement.remove(); checkChanges();">Remove</button>
+      `;
+      container.appendChild(row);
+      row.querySelectorAll('input').forEach(i => i.addEventListener('input', checkChanges));
+    }
+
+    function addSectorRow(name = '', value = '') {
+      const container = document.getElementById('sectorContainer');
+      const row = document.createElement('div');
+      row.className = 'exposure-row';
+      row.innerHTML = `
+        <div class="name"><label>Sector Name</label><input type="text" value="${name}" data-original="${name}"></div>
+        <div class="value"><label>Value (%)</label><input type="number" step="0.01" value="${value}" data-original="${value}"></div>
+        <button type="button" class="remove-btn" onclick="this.parentElement.remove(); checkChanges();">Remove</button>
+      `;
+      container.appendChild(row);
+      row.querySelectorAll('input').forEach(i => i.addEventListener('input', checkChanges));
+    }
+
+    function addMarketCapRow(name = '', value = '') {
+      const container = document.getElementById('marketCapContainer');
+      const row = document.createElement('div');
+      row.className = 'exposure-row';
+      row.innerHTML = `
+        <div class="name"><label>Market Cap Range</label><input type="text" value="${name}" data-original="${name}"></div>
+        <div class="value"><label>Value (%)</label><input type="number" step="0.01" value="${value}" data-original="${value}"></div>
+        <button type="button" class="remove-btn" onclick="this.parentElement.remove(); checkChanges();">Remove</button>
+      `;
+      container.appendChild(row);
+      row.querySelectorAll('input').forEach(i => i.addEventListener('input', checkChanges));
+    }
+
+    async function saveData() {
+      const token = sessionStorage.getItem('adminToken');
+      
+      const chartData = [];
+      document.querySelectorAll('#chartContainer .chart-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs[0].value && inputs[1].value) {
+          chartData.push({ month: inputs[0].value, value: parseFloat(inputs[1].value) });
+        }
+      });
+      
+      const holdingsData = [];
+      document.querySelectorAll('#holdingsContainer .holding-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs[0].value && inputs[1].value) {
+          holdingsData.push({ name: inputs[0].value, weight: parseFloat(inputs[1].value) });
+        }
+      });
+      
+      const sectorsData = [];
+      document.querySelectorAll('#sectorContainer .exposure-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs[0].value && inputs[1].value) {
+          sectorsData.push({ name: inputs[0].value, value: parseFloat(inputs[1].value) });
+        }
+      });
+      
+      const marketCapData = [];
+      document.querySelectorAll('#marketCapContainer .exposure-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs[0].value && inputs[1].value) {
+          marketCapData.push({ name: inputs[0].value, value: parseFloat(inputs[1].value) });
+        }
+      });
+      
+      const data = {
+        performance: {
+          mtd: parseFloat(document.querySelector('[name="perf_mtd"]').value) || 0,
+          qtd: parseFloat(document.querySelector('[name="perf_qtd"]').value) || 0,
+          fy26: parseFloat(document.querySelector('[name="perf_fy26"]').value) || 0,
+          annualised: parseFloat(document.querySelector('[name="perf_annualised"]').value) || 0,
+          chart: chartData
+        },
+        stats: {
+          bestMonth: parseFloat(document.querySelector('[name="stats_best_month"]').value) || 0,
+          worstMonth: parseFloat(document.querySelector('[name="stats_worst_month"]').value) || 0,
+          msciBest: parseFloat(document.querySelector('[name="stats_msci_best"]').value) || 0,
+          msciWorst: parseFloat(document.querySelector('[name="stats_msci_worst"]').value) || 0,
+          upside: parseFloat(document.querySelector('[name="stats_upside"]').value) || 0,
+          downside: parseFloat(document.querySelector('[name="stats_downside"]').value) || 0,
+          avgNet: parseFloat(document.querySelector('[name="stats_avg_net"]').value) || 0,
+          avgCash: parseFloat(document.querySelector('[name="stats_avg_cash"]').value) || 0,
+          beta: parseFloat(document.querySelector('[name="stats_beta"]').value) || 0
+        },
+        funds: {
+          universe: document.querySelector('[name="fund_universe"]').value,
+          holdings: document.querySelector('[name="fund_holdings"]').value,
+          target: document.querySelector('[name="fund_target"]').value,
+          minInvestment: document.querySelector('[name="fund_min_investment"]').value,
+          mgmtFee: parseFloat(document.querySelector('[name="fund_mgmt_fee"]').value) || 0,
+          perfFee: parseFloat(document.querySelector('[name="fund_perf_fee"]').value) || 0,
+          apir: document.querySelector('[name="fund_apir"]').value,
+          vehicle: document.querySelector('[name="fund_vehicle"]').value,
+          pm: document.querySelector('[name="fund_pm"]').value
+        },
+        holdings: holdingsData,
+        exposure: {
+          grossLong: parseFloat(document.querySelector('[name="exp_gross_long"]').value) || 0,
+          grossShort: parseFloat(document.querySelector('[name="exp_gross_short"]').value) || 0,
+          net: parseFloat(document.querySelector('[name="exp_net"]').value) || 0,
+          sectors: sectorsData,
+          marketCap: marketCapData
+        }
+      };
+      
+      try {
+        const res = await fetch('/api/admin/data', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+          document.getElementById('successMsg').style.display = 'inline';
+          document.getElementById('dateUpdated').textContent = 'Last updated: ' + new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+          document.querySelectorAll('input').forEach(input => {
+            input.dataset.original = input.value;
+            input.classList.remove('changed');
+          });
+          hasChanges = false;
+          document.getElementById('changesIndicator').classList.add('hidden');
+          setTimeout(() => {
+            document.getElementById('successMsg').style.display = 'none';
+          }, 3000);
+        } else {
+          alert('Failed to save: ' + result.message);
+        }
+      } catch (err) {
+        alert('Connection error');
+      }
+    }
+
+    if (sessionStorage.getItem('adminToken')) {
+      showAdmin();
+      loadData();
+    }
+  </script>
+</body>
+</html>
