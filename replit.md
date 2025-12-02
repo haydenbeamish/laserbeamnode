@@ -15,7 +15,8 @@ This is a Node.js Express backend API that provides endpoints for:
 - `performance.js` - Performance data endpoint handler
 - `Text.js` - Text data endpoint handler
 - `getPost.js` - Individual post fetching handler
-- `LaserBeamExcel.xlsx` - Excel data source
+- `syncOneDrive.js` - OneDrive sync script for automatic Excel file updates
+- `LaserBeamExcel.xlsx` - Excel data source (synced from OneDrive)
 
 ## API Endpoints
 - `GET /` - Welcome message
@@ -33,13 +34,23 @@ This is a Node.js Express backend API that provides endpoints for:
 - cors - CORS middleware
 - node-fetch - HTTP requests
 - read-excel-file - Excel file parsing
+- @microsoft/microsoft-graph-client - OneDrive API client
 
 ## Running the Project
 The server runs on port 5000 and binds to 0.0.0.0 for external access.
 
 Start command: `npm start`
 
+## OneDrive Sync
+The Excel file is automatically synced from OneDrive. To manually sync:
+- Run: `npm run sync`
+
+The sync script searches for `LaserBeamExcel.xlsx` in your connected OneDrive and downloads it to the project directory.
+
 ## Recent Changes
 - Configured for Replit environment (port 5000, host 0.0.0.0)
 - Added npm scripts for starting the server
 - Added .gitignore for Node.js projects
+- Added OneDrive sync integration for automatic Excel file updates
+- Fixed percentage display for holdings, funds, and performance endpoints
+- Added disclaimer and dateUpdated to performance endpoint
