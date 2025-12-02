@@ -1,63 +1,65 @@
-# Express API Project
+# Laser Beam Capital API
 
 ## Overview
-This is a Node.js Express backend API that provides endpoints for:
-- Reading and serving data from an Excel file (LaserBeamExcel.xlsx)
-- Fetching posts from the Beehiiv API
-- Various data endpoints for stats, funds, exposure, performance, and holdings
+Backend API for Laser Beam Capital that provides financial data endpoints and an admin panel for managing site content. Data is stored in a PostgreSQL database and can be updated through the admin interface.
 
 ## Project Structure
-- `index.js` - Main Express server and route definitions
-- `stats.js` - Stats data endpoint handler
-- `funds.js` - Funds data endpoint handler
-- `holdings.js` - Holdings data endpoint handler
-- `exposure.js` - Exposure data endpoint handler
-- `performance.js` - Performance data endpoint handler
-- `Text.js` - Text data endpoint handler
-- `getPost.js` - Individual post fetching handler
-- `LaserBeamExcel.xlsx` - Excel data source
-- `server/db.ts` - Database connection setup
-- `shared/schema.ts` - Database schema definitions
-- `drizzle.config.ts` - Drizzle ORM configuration
+- `index.js` - Main Express server with all API routes and admin authentication
+- `public/admin.html` - Admin panel interface for data management
+- `shared/schema.ts` - Database schema (single site_data table with JSONB columns)
+- `migrate-excel.js` - Script to migrate initial data from Excel to database
+- `LaserBeamExcel.xlsx` - Original Excel data source (for reference)
 
 ## Database
-The project uses a PostgreSQL database (Neon) with Drizzle ORM. Tables include:
-- `performance_data` - Performance metrics
-- `stats_data` - Statistics data
-- `funds_data` - Fund information
-- `holdings_data` - Holdings information
-- `exposure_data` - Exposure data
-
-To push schema changes: `npm run db:push`
+PostgreSQL database with simplified schema:
+- `site_data` - Single table storing all site content as JSONB:
+  - `performance` - Performance metrics and chart data
+  - `stats` - Statistics data
+  - `funds` - Fund information
+  - `holdings` - Top holdings
+  - `exposure` - Net exposure, sector, and market cap data
+  - `date_updated` - Auto-set timestamp when data is saved
 
 ## API Endpoints
+
+### Public Endpoints
 - `GET /` - Welcome message
+- `GET /api/performance` - Optimized endpoint returning ALL site data for frontend
 - `GET /posts` - Fetch posts from Beehiiv API
 - `GET /selectedpost/:id` - Fetch specific post by ID
-- `GET /stats` - Get stats data from Excel
-- `GET /funds` - Get funds data from Excel
-- `GET /text` - Get text data from Excel
-- `GET /exposure` - Get exposure data from Excel
-- `GET /performance` - Get performance data from Excel
-- `GET /holdings` - Get holdings data from Excel
 
-## Dependencies
-- express - Web framework
-- cors - CORS middleware
-- node-fetch - HTTP requests
-- read-excel-file - Excel file parsing
-- @neondatabase/serverless - PostgreSQL database
-- drizzle-orm - ORM for database operations
-- drizzle-kit - Database migrations
+### Admin Endpoints
+- `GET /admin` - Admin panel interface
+- `POST /api/admin/login` - Admin authentication (username: admin, password: ADMIN_PASSWORD secret)
+- `GET /api/admin/data` - Load all site data (requires auth)
+- `POST /api/admin/data` - Save all site data (requires auth, full overwrite)
+
+## Environment Variables (Secrets)
+- `ADMIN_PASSWORD` - Password for admin login
+- `BEEHIIV_API_KEY` - Beehiiv API key for blog posts
+- `DATABASE_URL` - PostgreSQL connection string (auto-provided by Replit)
+
+## Admin Panel Features
+- Login with username "admin" and password from ADMIN_PASSWORD secret
+- Edit all data sections: Performance, Stats, Funds, Holdings, Exposure
+- Add/remove chart data points, holdings, sector exposure, market cap entries
+- Visual highlighting of changed fields
+- Date auto-updates on save
+- Data fully overwrites previous values (no merging)
 
 ## Running the Project
-The server runs on port 5000 and binds to 0.0.0.0 for external access.
+- Start: `npm start` (runs on port 5000, host 0.0.0.0)
+- Migrate Excel data: `node migrate-excel.js`
 
-Start command: `npm start`
+## Data Format Notes
+- All percentage values are stored as whole numbers (e.g., 10 for 10%, not 0.1)
+- Chart months use YYYY-MM format
+- The /api/performance endpoint formats data for the frontend with all needed fields
 
-## Recent Changes
-- Added PostgreSQL database with Drizzle ORM
-- Added database schema for performance, stats, funds, holdings, and exposure data
-- Configured for Replit environment (port 5000, host 0.0.0.0)
-- Added npm scripts for starting the server and database operations
-- Added .gitignore for Node.js projects
+## Recent Changes (Dec 2025)
+- Migrated from Excel-based data to PostgreSQL database
+- Created admin panel for manual data entry
+- Simplified to single-table JSONB schema for easy full-data overwrites
+- Created optimized /api/performance endpoint for frontend
+- Added admin authentication using ADMIN_PASSWORD secret
+- Moved Beehiiv API key to environment variable

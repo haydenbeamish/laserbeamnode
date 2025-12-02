@@ -214,7 +214,7 @@ app.get("/posts", async (req, res) => {
 
     const response = await fetch(url, {
       headers: {
-        Authorization: "Bearer Uc0kKMmsqoEX0mlip2PR0N3RTWM07NBvkYRas3cFKMRF4UXe6uCbnre39fhRNJ1j",
+        Authorization: `Bearer ${process.env.BEEHIIV_API_KEY}`,
       },
     });
 
@@ -240,7 +240,7 @@ app.get("/selectedpost/:id", async (req, res) => {
       {
         method: "GET",
         headers: {
-          Authorization: "Bearer Uc0kKMmsqoEX0mlip2PR0N3RTWM07NBvkYRas3cFKMRF4UXe6uCbnre39fhRNJ1j",
+          Authorization: `Bearer ${process.env.BEEHIIV_API_KEY}`,
         },
       }
     );
