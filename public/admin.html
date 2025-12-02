@@ -47,6 +47,11 @@
     .add-btn:hover { background: #22c55e; color: #000; }
     .remove-btn { background: #ef4444; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
     .remove-btn:hover { background: #dc2626; }
+    .text-row { margin-bottom: 16px; padding: 16px; background: #0a0a0a; border-radius: 8px; }
+    .text-row input { margin-bottom: 8px; }
+    textarea { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #0a0a0a; color: #fff; font-size: 14px; min-height: 100px; resize: vertical; font-family: inherit; }
+    textarea:focus { outline: none; border-color: #22c55e; }
+    textarea.changed { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
     @media (max-width: 768px) { .grid-3, .grid-5 { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
@@ -144,6 +149,12 @@
         <h2>Market Cap Exposure</h2>
         <div id="marketCapContainer"></div>
         <button type="button" class="add-btn" onclick="addMarketCapRow()">+ Add Market Cap</button>
+      </div>
+
+      <div class="section">
+        <h2>Text Content</h2>
+        <div id="textContainer"></div>
+        <button type="button" class="add-btn" onclick="addTextRow()">+ Add Text Section</button>
       </div>
     </form>
 
@@ -274,9 +285,14 @@
         }
       }
       
-      document.querySelectorAll('input').forEach(input => {
-        input.dataset.original = input.value;
-        input.addEventListener('input', checkChanges);
+      document.getElementById('textContainer').innerHTML = '';
+      if (data.text) {
+        data.text.forEach(t => addTextRow(t.key, t.text));
+      }
+      
+      document.querySelectorAll('input, textarea').forEach(el => {
+        el.dataset.original = el.value;
+        el.addEventListener('input', checkChanges);
       });
     }
 
@@ -289,12 +305,12 @@
 
     function checkChanges() {
       let changed = false;
-      document.querySelectorAll('input').forEach(input => {
-        if (input.value !== input.dataset.original) {
-          input.classList.add('changed');
+      document.querySelectorAll('input, textarea').forEach(el => {
+        if (el.value !== el.dataset.original) {
+          el.classList.add('changed');
           changed = true;
         } else {
-          input.classList.remove('changed');
+          el.classList.remove('changed');
         }
       });
       hasChanges = changed;
@@ -353,6 +369,22 @@
       row.querySelectorAll('input').forEach(i => i.addEventListener('input', checkChanges));
     }
 
+    function addTextRow(key = '', text = '') {
+      const container = document.getElementById('textContainer');
+      const row = document.createElement('div');
+      row.className = 'text-row';
+      const escapedText = text.replace(/"/g, '&quot;');
+      row.innerHTML = `
+        <label>Section Title</label>
+        <input type="text" value="${key}" data-original="${key}" placeholder="e.g. Strategy, Hedging, AI Analyst">
+        <label>Content</label>
+        <textarea data-original="${escapedText}" placeholder="Enter the text content...">${text}</textarea>
+        <button type="button" class="remove-btn" style="margin-top: 8px;" onclick="this.parentElement.remove(); checkChanges();">Remove Section</button>
+      `;
+      container.appendChild(row);
+      row.querySelectorAll('input, textarea').forEach(i => i.addEventListener('input', checkChanges));
+    }
+
     async function saveData() {
       const token = sessionStorage.getItem('adminToken');
       
@@ -385,6 +417,15 @@
         const inputs = row.querySelectorAll('input');
         if (inputs[0].value && inputs[1].value) {
           marketCapData.push({ name: inputs[0].value, value: parseFloat(inputs[1].value) });
+        }
+      });
+      
+      const textData = [];
+      document.querySelectorAll('#textContainer .text-row').forEach(row => {
+        const input = row.querySelector('input');
+        const textarea = row.querySelector('textarea');
+        if (input.value && textarea.value) {
+          textData.push({ key: input.value, text: textarea.value });
         }
       });
       
@@ -425,7 +466,8 @@
           net: parseFloat(document.querySelector('[name="exp_net"]').value) || 0,
           sectors: sectorsData,
           marketCap: marketCapData
-        }
+        },
+        text: textData
       };
       
       try {
@@ -442,9 +484,9 @@
         if (result.success) {
           document.getElementById('successMsg').style.display = 'inline';
           document.getElementById('dateUpdated').textContent = 'Last updated: ' + new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-          document.querySelectorAll('input').forEach(input => {
-            input.dataset.original = input.value;
-            input.classList.remove('changed');
+          document.querySelectorAll('input, textarea').forEach(el => {
+            el.dataset.original = el.value;
+            el.classList.remove('changed');
           });
           hasChanges = false;
           document.getElementById('changesIndicator').classList.add('hidden');

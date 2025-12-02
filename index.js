@@ -120,6 +120,7 @@ app.get("/api/performance", async (req, res) => {
         funds: [],
         holdings: [],
         exposure: { netExposure: [], sectorExposure: [], marketCapExposure: [] },
+        text: [],
         disclaimer: DISCLAIMER,
         dateUpdated: null
       });
@@ -131,6 +132,7 @@ app.get("/api/performance", async (req, res) => {
     const funds = row.funds || {};
     const holdings = row.holdings || [];
     const exposure = row.exposure || {};
+    const textData = row.text || [];
     
     const table = [
       { label: "MTD", value: perf.mtd || 0 },
@@ -198,6 +200,7 @@ app.get("/api/performance", async (req, res) => {
       funds: fundsArray,
       holdings: holdingsArray,
       exposure: { netExposure, sectorExposure, marketCapExposure },
+      text: textData,
       disclaimer: DISCLAIMER,
       dateUpdated: row.date_updated
     });

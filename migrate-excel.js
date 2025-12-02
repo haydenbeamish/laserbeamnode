@@ -15,6 +15,7 @@ async function migrate() {
     const fundsRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "TheFund" });
     const holdingsRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "Holdings" });
     const exposureRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "Exposure" });
+    const textRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "Text" });
 
     const performance = { chart: [] };
     let dateUpdated = null;
@@ -97,23 +98,33 @@ async function migrate() {
       }
     }
 
+    const text = [];
+    for (let i = 1; i < textRows.length; i++) {
+      const row = textRows[i];
+      if (row[0] && row[1]) {
+        text.push({ key: row[0], text: row[1] });
+      }
+    }
+
     console.log("Migrating to database...");
     console.log("Performance:", performance);
     console.log("Stats:", stats);
     console.log("Funds:", funds);
     console.log("Holdings:", holdings);
     console.log("Exposure:", exposure);
+    console.log("Text:", text);
 
     await pool.query("DELETE FROM site_data");
     await pool.query(
-      `INSERT INTO site_data (performance, stats, funds, holdings, exposure, date_updated, created_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $6)`,
+      `INSERT INTO site_data (performance, stats, funds, holdings, exposure, text, date_updated, created_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
       [
         JSON.stringify(performance),
         JSON.stringify(stats),
         JSON.stringify(funds),
         JSON.stringify(holdings),
         JSON.stringify(exposure),
+        JSON.stringify(text),
         dateUpdated || new Date()
       ]
     );
