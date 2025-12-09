@@ -108,6 +108,125 @@ app.post("/api/admin/data", authMiddleware, async (req, res) => {
 
 const DISCLAIMER = "Past performance is not a reliable indicator of future performance. Hedge Partners Pty Ltd ACN 685 627 954, trading as Laser Beam Capital is a Corporate Authorised Representative (CAR No. 1314946) of Non Correlated Advisors Pty Ltd ACN 158 314 982 (AFSL No. 430126). Authorised to provide general advice to wholesale investors only.";
 
+function calculatePerformanceMetrics(monthlyData) {
+  if (!monthlyData || monthlyData.length < 2) {
+    return {
+      mtd: 0, qtd: 0, fy26: 0, annualised: 0, oneYear: 0,
+      bestMonth: 0, worstMonth: 0, msciBest: 0, msciWorst: 0,
+      upside: 0, downside: 0, beta: 0,
+      chart: []
+    };
+  }
+  
+  const sorted = [...monthlyData].sort((a, b) => a.month.localeCompare(b.month));
+  const lbfReturns = [];
+  const mgwdReturns = [];
+  const chart = [];
+  
+  let inceptionCompound = 1;
+  
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1];
+    const curr = sorted[i];
+    
+    const lbfReturn = prev.nav > 0 ? ((curr.nav / prev.nav) - 1) : 0;
+    const mgwdReturn = prev.mgwd > 0 ? ((curr.mgwd / prev.mgwd) - 1) : 0;
+    
+    lbfReturns.push(lbfReturn * 100);
+    mgwdReturns.push(mgwdReturn * 100);
+    
+    inceptionCompound *= (1 + lbfReturn);
+    chart.push({
+      month: curr.month,
+      value: Math.round((inceptionCompound - 1) * 100 * 10) / 10
+    });
+  }
+  
+  const mtd = lbfReturns.length > 0 ? lbfReturns[lbfReturns.length - 1] : 0;
+  
+  const qMonths = Math.min(3, lbfReturns.length);
+  let qCompound = 1;
+  for (let i = lbfReturns.length - qMonths; i < lbfReturns.length; i++) {
+    qCompound *= (1 + lbfReturns[i] / 100);
+  }
+  const qtd = (qCompound - 1) * 100;
+  
+  const fy26Data = sorted.filter(d => d.month >= '2025-07');
+  let fy26Compound = 1;
+  for (let i = 0; i < fy26Data.length; i++) {
+    const currIdx = sorted.indexOf(fy26Data[i]);
+    if (currIdx > 0) {
+      const r = (sorted[currIdx].nav / sorted[currIdx - 1].nav) - 1;
+      fy26Compound *= (1 + r);
+    }
+  }
+  const fy26 = (fy26Compound - 1) * 100;
+  
+  let oneYear = 0;
+  if (lbfReturns.length >= 12) {
+    let yr1Compound = 1;
+    const last12Returns = lbfReturns.slice(-12);
+    for (const r of last12Returns) {
+      yr1Compound *= (1 + r / 100);
+    }
+    oneYear = (yr1Compound - 1) * 100;
+  }
+  
+  const monthsElapsed = sorted.length - 1;
+  const annualised = monthsElapsed > 0 ? (Math.pow(inceptionCompound, 12 / monthsElapsed) - 1) * 100 : 0;
+  
+  const bestMonth = lbfReturns.length > 0 ? Math.max(...lbfReturns) : 0;
+  const worstMonth = lbfReturns.length > 0 ? Math.min(...lbfReturns) : 0;
+  const msciBest = mgwdReturns.length > 0 ? Math.max(...mgwdReturns) : 0;
+  const msciWorst = mgwdReturns.length > 0 ? Math.min(...mgwdReturns) : 0;
+  
+  const positiveMgwd = mgwdReturns.map((m, i) => ({ m, l: lbfReturns[i] })).filter(x => x.m > 0);
+  const negativeMgwd = mgwdReturns.map((m, i) => ({ m, l: lbfReturns[i] })).filter(x => x.m < 0);
+  
+  let upside = 0;
+  if (positiveMgwd.length > 0) {
+    const avgLbfUp = positiveMgwd.reduce((s, x) => s + x.l, 0) / positiveMgwd.length;
+    const avgMgwdUp = positiveMgwd.reduce((s, x) => s + x.m, 0) / positiveMgwd.length;
+    upside = (avgLbfUp / avgMgwdUp) * 100;
+  }
+  
+  let downside = 0;
+  if (negativeMgwd.length > 0) {
+    const avgLbfDown = negativeMgwd.reduce((s, x) => s + x.l, 0) / negativeMgwd.length;
+    const avgMgwdDown = negativeMgwd.reduce((s, x) => s + x.m, 0) / negativeMgwd.length;
+    downside = (avgLbfDown / avgMgwdDown) * 100;
+  }
+  
+  let beta = 0;
+  if (lbfReturns.length >= 2 && mgwdReturns.length >= 2) {
+    const n = lbfReturns.length;
+    const sumX = mgwdReturns.reduce((a, b) => a + b, 0);
+    const sumY = lbfReturns.reduce((a, b) => a + b, 0);
+    const sumXY = mgwdReturns.reduce((s, x, i) => s + x * lbfReturns[i], 0);
+    const sumX2 = mgwdReturns.reduce((s, x) => s + x * x, 0);
+    const denom = n * sumX2 - sumX * sumX;
+    if (denom !== 0) {
+      beta = (n * sumXY - sumX * sumY) / denom;
+    }
+  }
+  
+  return {
+    mtd: Math.round(mtd * 10) / 10,
+    qtd: Math.round(qtd * 10) / 10,
+    fy26: Math.round(fy26 * 10) / 10,
+    annualised: Math.round(annualised * 10) / 10,
+    oneYear: Math.round(oneYear * 10) / 10,
+    bestMonth: Math.round(bestMonth * 10) / 10,
+    worstMonth: Math.round(worstMonth * 10) / 10,
+    msciBest: Math.round(msciBest * 10) / 10,
+    msciWorst: Math.round(msciWorst * 10) / 10,
+    upside: Math.round(upside),
+    downside: Math.round(downside),
+    beta: Math.round(beta * 10) / 10,
+    chart
+  };
+}
+
 app.get("/api/performance", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM site_data ORDER BY id DESC LIMIT 1");
@@ -128,34 +247,36 @@ app.get("/api/performance", async (req, res) => {
     
     const row = result.rows[0];
     const perf = row.performance || {};
-    const stats = row.stats || {};
+    const statsData = row.stats || {};
     const funds = row.funds || {};
     const holdings = row.holdings || [];
     const exposure = row.exposure || {};
     const textData = row.text || [];
     
+    const metrics = calculatePerformanceMetrics(perf.monthlyData);
+    
     const table = [
-      { label: "MTD", value: perf.mtd || 0 },
-      { label: "QTD", value: perf.qtd || 0 },
-      { label: "FY26", value: perf.fy26 || 0 },
-      { label: "Annualised", value: perf.annualised || 0 }
+      { label: "MTD", value: metrics.mtd },
+      { label: "QTD", value: metrics.qtd },
+      { label: "FY26", value: metrics.fy26 },
+      { label: "Annualised", value: metrics.annualised }
     ];
     
-    const lineChart = (perf.chart || []).map(item => ({
+    const lineChart = metrics.chart.map(item => ({
       Month: item.month ? new Date(item.month + "-01").toISOString() : null,
       CumulativeReturn: item.value || 0
     }));
     
     const statsArray = [
-      { key: "Best Month", value: stats.bestMonth || 0 },
-      { key: "Worst Month", value: stats.worstMonth || 0 },
-      { key: "MSCI AW Best", value: stats.msciBest || 0 },
-      { key: "MSCI AW Worst", value: stats.msciWorst || 0 },
-      { key: "Upside Capture", value: stats.upside || 0 },
-      { key: "Downside Capture", value: stats.downside || 0 },
-      { key: "Avg. Net Exposure", value: stats.avgNet || 0 },
-      { key: "Avg. Cash Balance", value: stats.avgCash || 0 },
-      { key: "Beta", value: stats.beta || 0 }
+      { key: "Best Month", value: metrics.bestMonth },
+      { key: "Worst Month", value: metrics.worstMonth },
+      { key: "MSCI AW Best", value: metrics.msciBest },
+      { key: "MSCI AW Worst", value: metrics.msciWorst },
+      { key: "Upside Capture", value: metrics.upside },
+      { key: "Downside Capture", value: metrics.downside },
+      { key: "Avg. Net Exposure", value: statsData.avgNet || 0 },
+      { key: "Avg. Cash Balance", value: statsData.avgCash || 0 },
+      { key: "Beta", value: metrics.beta }
     ];
     
     const fundsArray = [

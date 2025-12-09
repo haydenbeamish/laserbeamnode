@@ -4,27 +4,28 @@
 Backend API for Laser Beam Capital that provides financial data endpoints and an admin panel for managing site content. Data is stored in a PostgreSQL database and can be updated through the admin interface.
 
 ## Project Structure
-- `index.js` - Main Express server with all API routes and admin authentication
-- `public/admin.html` - Admin panel interface for data management
+- `index.js` - Main Express server with all API routes, admin authentication, and performance calculation logic
+- `public/admin.html` - Admin panel interface for data management with auto-calculated metrics display
 - `shared/schema.ts` - Database schema (single site_data table with JSONB columns)
-- `migrate-excel.js` - Script to migrate initial data from Excel to database
+- `migrate-excel.js` - Script to migrate/seed data to database
 - `LaserBeamExcel.xlsx` - Original Excel data source (for reference)
 
 ## Database
 PostgreSQL database with simplified schema:
 - `site_data` - Single table storing all site content as JSONB:
-  - `performance` - Performance metrics and chart data
-  - `stats` - Statistics data
+  - `performance` - Contains `monthlyData` array with NAV and MGWD index values
+  - `stats` - Manual statistics (avgNet, avgCash only)
   - `funds` - Fund information
   - `holdings` - Top holdings
   - `exposure` - Net exposure, sector, and market cap data
+  - `text` - Text content sections
   - `date_updated` - Auto-set timestamp when data is saved
 
 ## API Endpoints
 
 ### Public Endpoints
 - `GET /` - Welcome message
-- `GET /api/performance` - Optimized endpoint returning ALL site data for frontend
+- `GET /api/performance` - Optimized endpoint returning ALL site data with calculated metrics
 - `GET /posts` - Fetch posts from Beehiiv API
 - `GET /selectedpost/:id` - Fetch specific post by ID
 
@@ -41,22 +42,48 @@ PostgreSQL database with simplified schema:
 
 ## Admin Panel Features
 - Login with username "admin" and password from ADMIN_PASSWORD secret
-- Edit all data sections: Performance, Stats, Funds, Holdings, Exposure
-- Add/remove chart data points, holdings, sector exposure, market cap entries
+- **Performance Data Input**: Enter LBF NAV and MGWD Index per month
+- **Auto-Calculated Metrics** (displayed in green, read-only):
+  - Month % (current NAV / previous NAV - 1)
+  - Quarter % (rolling 3 months compounded)
+  - FY26 % (compounded from July 2025)
+  - 1 Year % (calculated when 12+ months exist)
+  - Best/Worst Month (LBF)
+  - MSCI AW Best/Worst
+  - Upside Capture (avg positive LBF / avg positive MGWD when MGWD > 0)
+  - Downside Capture (avg negative LBF / avg negative MGWD when MGWD < 0)
+  - Beta (SLOPE of LBF returns vs MGWD returns)
+- **Manual Input**: Avg Net Exposure, Avg Cash Balance
+- Edit: Fund details, Holdings, Exposure (sectors, market cap), Text content
 - Visual highlighting of changed fields
 - Date auto-updates on save
-- Data fully overwrites previous values (no merging)
 
 ## Running the Project
 - Start: `npm start` (runs on port 5000, host 0.0.0.0)
-- Migrate Excel data: `node migrate-excel.js`
+- Migrate/Seed data: `node migrate-excel.js`
 
 ## Data Format Notes
-- All percentage values are stored as whole numbers (e.g., 10 for 10%, not 0.1)
-- Chart months use YYYY-MM format
-- The /api/performance endpoint formats data for the frontend with all needed fields
+- NAV values stored with full precision (e.g., 1.03, 1.12)
+- MGWD Index stored as the index value (e.g., 425.45, 468.65)
+- First month (June 2025) is baseline: NAV = 1.00, MGWD = 425.45
+- Calculated percentages rounded to 1 decimal place
+- Capture ratios and Beta rounded to whole numbers
+- The /api/performance endpoint calculates all metrics on-the-fly from monthlyData
+
+## Performance Calculation Logic (in index.js)
+```javascript
+// Monthly return: (currentNAV / previousNAV) - 1
+// Quarter: Rolling 3-month compound return
+// FY26: Compound from July 2025 onwards
+// Upside Capture: avgLBF(when MGWD>0) / avgMGWD(when MGWD>0) * 100
+// Downside Capture: avgLBF(when MGWD<0) / avgMGWD(when MGWD<0) * 100
+// Beta: SLOPE formula (linear regression of LBF vs MGWD returns)
+```
 
 ## Recent Changes (Dec 2025)
+- **NEW**: Redesigned admin panel with NAV/MGWD input and auto-calculated metrics
+- **NEW**: Performance metrics now calculated server-side from raw NAV/MGWD data
+- **NEW**: Text content section added for Strategy, Hedging, AI Analyst, Risk Management
 - Migrated from Excel-based data to PostgreSQL database
 - Created admin panel for manual data entry
 - Simplified to single-table JSONB schema for easy full-data overwrites

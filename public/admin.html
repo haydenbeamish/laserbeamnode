@@ -10,7 +10,7 @@
     .login-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
     .login-box { background: #1a1a1a; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; }
     .login-box h1 { margin-bottom: 24px; font-size: 24px; text-align: center; }
-    .admin-container { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
+    .admin-container { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; padding-bottom: 100px; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #333; }
     .header h1 { font-size: 24px; }
     .btn { background: #22c55e; color: #000; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
@@ -22,27 +22,32 @@
     input, select { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #0a0a0a; color: #fff; font-size: 14px; margin-bottom: 16px; }
     input:focus { outline: none; border-color: #22c55e; }
     input.changed { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+    input.calculated { background: #1a2e1a; border-color: #22c55e; color: #22c55e; cursor: not-allowed; }
     label { display: block; margin-bottom: 8px; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    label.calculated-label { color: #22c55e; }
     .section { background: #1a1a1a; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
     .section h2 { margin-bottom: 20px; font-size: 18px; color: #22c55e; }
     .section h3 { margin: 20px 0 12px; font-size: 14px; color: #888; border-top: 1px solid #333; padding-top: 16px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
     .grid-2 { grid-template-columns: repeat(2, 1fr); }
     .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
     .grid-5 { grid-template-columns: repeat(5, 1fr); }
     .date-updated { background: #22c55e; color: #000; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; }
     .save-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #333; }
     .changes-indicator { color: #f59e0b; font-size: 14px; }
     .changes-indicator.hidden { visibility: hidden; }
     .success-msg { color: #22c55e; font-size: 14px; }
-    .holding-row, .chart-row, .exposure-row { display: flex; gap: 12px; align-items: end; margin-bottom: 12px; }
-    .holding-row input, .chart-row input, .exposure-row input { margin-bottom: 0; }
+    .holding-row, .chart-row, .exposure-row, .nav-row { display: flex; gap: 12px; align-items: end; margin-bottom: 12px; }
+    .holding-row input, .chart-row input, .exposure-row input, .nav-row input { margin-bottom: 0; }
     .holding-row .name { flex: 2; }
     .holding-row .weight { flex: 1; }
     .chart-row .date { flex: 2; }
     .chart-row .value { flex: 1; }
     .exposure-row .name { flex: 2; }
     .exposure-row .value { flex: 1; }
+    .nav-row > div { flex: 1; }
+    .nav-row .month-col { flex: 1.5; }
     .add-btn { background: #333; color: #22c55e; border: 1px dashed #22c55e; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 8px; }
     .add-btn:hover { background: #22c55e; color: #000; }
     .remove-btn { background: #ef4444; color: #fff; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
@@ -52,6 +57,18 @@
     textarea { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #0a0a0a; color: #fff; font-size: 14px; min-height: 100px; resize: vertical; font-family: inherit; }
     textarea:focus { outline: none; border-color: #22c55e; }
     textarea.changed { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+    .calculated-box { background: #0d1f0d; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .calculated-box h4 { color: #22c55e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+    .calc-item { text-align: center; }
+    .calc-item .label { font-size: 11px; color: #888; margin-bottom: 4px; }
+    .calc-item .value { font-size: 18px; font-weight: 600; color: #22c55e; }
+    .nav-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .nav-table th { text-align: left; padding: 8px 12px; background: #0a0a0a; color: #888; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #333; }
+    .nav-table th.calc { color: #22c55e; }
+    .nav-table td { padding: 8px 12px; border-bottom: 1px solid #222; }
+    .nav-table input { margin-bottom: 0; padding: 8px; }
+    .nav-table .calc-cell { color: #22c55e; font-weight: 500; }
     @media (max-width: 768px) { .grid-3, .grid-5 { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
@@ -81,31 +98,52 @@
 
     <form id="dataForm">
       <div class="section">
-        <h2>Performance Table</h2>
-        <div class="grid grid-5">
-          <div><label>MTD (%)</label><input type="number" step="0.01" name="perf_mtd" data-original=""></div>
-          <div><label>QTD (%)</label><input type="number" step="0.01" name="perf_qtd" data-original=""></div>
-          <div><label>FY26 (%)</label><input type="number" step="0.01" name="perf_fy26" data-original=""></div>
-          <div><label>Annualised (%)</label><input type="number" step="0.01" name="perf_annualised" data-original=""></div>
+        <h2>Performance Data (Input NAV & MGWD Index)</h2>
+        <p style="color: #888; font-size: 13px; margin-bottom: 16px;">Enter the LBF NAV and MGWD Index for each month. All percentages are auto-calculated.</p>
+        
+        <div class="calculated-box">
+          <h4>Calculated Summary (Auto-Updated)</h4>
+          <div class="calc-grid">
+            <div class="calc-item"><div class="label">MTD</div><div class="value" id="calc_mtd">-</div></div>
+            <div class="calc-item"><div class="label">QTD (Rolling 3M)</div><div class="value" id="calc_qtd">-</div></div>
+            <div class="calc-item"><div class="label">FY26</div><div class="value" id="calc_fy26">-</div></div>
+            <div class="calc-item"><div class="label">1 Year</div><div class="value" id="calc_1yr">-</div></div>
+            <div class="calc-item"><div class="label">Best Month</div><div class="value" id="calc_best">-</div></div>
+            <div class="calc-item"><div class="label">Worst Month</div><div class="value" id="calc_worst">-</div></div>
+            <div class="calc-item"><div class="label">MSCI Best</div><div class="value" id="calc_msci_best">-</div></div>
+            <div class="calc-item"><div class="label">MSCI Worst</div><div class="value" id="calc_msci_worst">-</div></div>
+            <div class="calc-item"><div class="label">Upside Capture</div><div class="value" id="calc_upside">-</div></div>
+            <div class="calc-item"><div class="label">Downside Capture</div><div class="value" id="calc_downside">-</div></div>
+            <div class="calc-item"><div class="label">Beta</div><div class="value" id="calc_beta">-</div></div>
+          </div>
         </div>
         
-        <h3>Performance Chart (Monthly Cumulative Returns)</h3>
-        <div id="chartContainer"></div>
-        <button type="button" class="add-btn" onclick="addChartRow()">+ Add Month</button>
+        <div style="overflow-x: auto;">
+          <table class="nav-table">
+            <thead>
+              <tr>
+                <th style="width: 120px;">Month</th>
+                <th style="width: 100px;">LBF NAV</th>
+                <th style="width: 100px;">MGWD Index</th>
+                <th class="calc" style="width: 80px;">Month %</th>
+                <th class="calc" style="width: 80px;">MGWD %</th>
+                <th class="calc" style="width: 100px;">Inception</th>
+                <th class="calc" style="width: 100px;">Quarter</th>
+                <th style="width: 60px;"></th>
+              </tr>
+            </thead>
+            <tbody id="navTableBody"></tbody>
+          </table>
+        </div>
+        <button type="button" class="add-btn" onclick="addNavRow()">+ Add Month</button>
       </div>
 
       <div class="section">
-        <h2>Statistics</h2>
-        <div class="grid grid-3">
-          <div><label>Best Month (%)</label><input type="number" step="0.01" name="stats_best_month" data-original=""></div>
-          <div><label>Worst Month (%)</label><input type="number" step="0.01" name="stats_worst_month" data-original=""></div>
-          <div><label>MSCI AW Best (%)</label><input type="number" step="0.01" name="stats_msci_best" data-original=""></div>
-          <div><label>MSCI AW Worst (%)</label><input type="number" step="0.01" name="stats_msci_worst" data-original=""></div>
-          <div><label>Upside Capture (%)</label><input type="number" step="0.01" name="stats_upside" data-original=""></div>
-          <div><label>Downside Capture (%)</label><input type="number" step="0.01" name="stats_downside" data-original=""></div>
+        <h2>Manual Statistics</h2>
+        <p style="color: #888; font-size: 13px; margin-bottom: 16px;">These values are entered manually (not calculated).</p>
+        <div class="grid grid-2">
           <div><label>Avg. Net Exposure (%)</label><input type="number" step="0.01" name="stats_avg_net" data-original=""></div>
           <div><label>Avg. Cash Balance (%)</label><input type="number" step="0.01" name="stats_avg_cash" data-original=""></div>
-          <div><label>Beta (%)</label><input type="number" step="0.01" name="stats_beta" data-original=""></div>
         </div>
       </div>
 
@@ -228,106 +266,265 @@
     }
 
     function populateForm(data) {
-      if (data.performance) {
-        setValue('perf_mtd', data.performance.mtd);
-        setValue('perf_qtd', data.performance.qtd);
-        setValue('perf_fy26', data.performance.fy26);
-        setValue('perf_annualised', data.performance.annualised);
-        
-        document.getElementById('chartContainer').innerHTML = '';
-        if (data.performance.chart) {
-          data.performance.chart.forEach(item => addChartRow(item.month, item.value));
-        }
+      document.getElementById('navTableBody').innerHTML = '';
+      document.getElementById('holdingsContainer').innerHTML = '';
+      document.getElementById('sectorContainer').innerHTML = '';
+      document.getElementById('marketCapContainer').innerHTML = '';
+      document.getElementById('textContainer').innerHTML = '';
+      
+      if (data.performance && data.performance.monthlyData) {
+        data.performance.monthlyData.forEach(row => {
+          addNavRow(row.month, row.nav, row.mgwd);
+        });
+      } else {
+        addNavRow('2025-06', 1.00, 425.45);
       }
       
       if (data.stats) {
-        setValue('stats_best_month', data.stats.bestMonth);
-        setValue('stats_worst_month', data.stats.worstMonth);
-        setValue('stats_msci_best', data.stats.msciBest);
-        setValue('stats_msci_worst', data.stats.msciWorst);
-        setValue('stats_upside', data.stats.upside);
-        setValue('stats_downside', data.stats.downside);
-        setValue('stats_avg_net', data.stats.avgNet);
-        setValue('stats_avg_cash', data.stats.avgCash);
-        setValue('stats_beta', data.stats.beta);
+        document.querySelector('[name="stats_avg_net"]').value = data.stats.avgNet || '';
+        document.querySelector('[name="stats_avg_net"]').dataset.original = data.stats.avgNet || '';
+        document.querySelector('[name="stats_avg_cash"]').value = data.stats.avgCash || '';
+        document.querySelector('[name="stats_avg_cash"]').dataset.original = data.stats.avgCash || '';
       }
       
       if (data.funds) {
-        setValue('fund_universe', data.funds.universe);
-        setValue('fund_holdings', data.funds.holdings);
-        setValue('fund_target', data.funds.target);
-        setValue('fund_min_investment', data.funds.minInvestment);
-        setValue('fund_mgmt_fee', data.funds.mgmtFee);
-        setValue('fund_perf_fee', data.funds.perfFee);
-        setValue('fund_apir', data.funds.apir);
-        setValue('fund_vehicle', data.funds.vehicle);
-        setValue('fund_pm', data.funds.pm);
+        Object.entries({
+          'fund_universe': data.funds.universe,
+          'fund_holdings': data.funds.holdings,
+          'fund_target': data.funds.target,
+          'fund_min_investment': data.funds.minInvestment,
+          'fund_mgmt_fee': data.funds.mgmtFee,
+          'fund_perf_fee': data.funds.perfFee,
+          'fund_apir': data.funds.apir,
+          'fund_vehicle': data.funds.vehicle,
+          'fund_pm': data.funds.pm
+        }).forEach(([name, value]) => {
+          const el = document.querySelector(`[name="${name}"]`);
+          if (el) { el.value = value || ''; el.dataset.original = value || ''; }
+        });
       }
       
-      document.getElementById('holdingsContainer').innerHTML = '';
-      if (data.holdings) {
+      if (data.holdings && data.holdings.length > 0) {
         data.holdings.forEach(h => addHoldingRow(h.name, h.weight));
       }
       
       if (data.exposure) {
-        setValue('exp_gross_long', data.exposure.grossLong);
-        setValue('exp_gross_short', data.exposure.grossShort);
-        setValue('exp_net', data.exposure.net);
+        document.querySelector('[name="exp_gross_long"]').value = data.exposure.grossLong || '';
+        document.querySelector('[name="exp_gross_long"]').dataset.original = data.exposure.grossLong || '';
+        document.querySelector('[name="exp_gross_short"]').value = data.exposure.grossShort || '';
+        document.querySelector('[name="exp_gross_short"]').dataset.original = data.exposure.grossShort || '';
+        document.querySelector('[name="exp_net"]').value = data.exposure.net || '';
+        document.querySelector('[name="exp_net"]').dataset.original = data.exposure.net || '';
         
-        document.getElementById('sectorContainer').innerHTML = '';
         if (data.exposure.sectors) {
           data.exposure.sectors.forEach(s => addSectorRow(s.name, s.value));
         }
-        
-        document.getElementById('marketCapContainer').innerHTML = '';
         if (data.exposure.marketCap) {
           data.exposure.marketCap.forEach(m => addMarketCapRow(m.name, m.value));
         }
       }
       
-      document.getElementById('textContainer').innerHTML = '';
-      if (data.text) {
+      if (data.text && data.text.length > 0) {
         data.text.forEach(t => addTextRow(t.key, t.text));
       }
       
       document.querySelectorAll('input, textarea').forEach(el => {
-        el.dataset.original = el.value;
         el.addEventListener('input', checkChanges);
       });
-    }
-
-    function setValue(name, value) {
-      const input = document.querySelector(`[name="${name}"]`);
-      if (input && value !== undefined && value !== null) {
-        input.value = value;
-      }
+      
+      recalculateAll();
     }
 
     function checkChanges() {
-      let changed = false;
+      hasChanges = false;
       document.querySelectorAll('input, textarea').forEach(el => {
         if (el.value !== el.dataset.original) {
           el.classList.add('changed');
-          changed = true;
+          hasChanges = true;
         } else {
           el.classList.remove('changed');
         }
       });
-      hasChanges = changed;
-      document.getElementById('changesIndicator').classList.toggle('hidden', !changed);
+      document.getElementById('changesIndicator').classList.toggle('hidden', !hasChanges);
     }
 
-    function addChartRow(month = '', value = '') {
-      const container = document.getElementById('chartContainer');
-      const row = document.createElement('div');
-      row.className = 'chart-row';
+    function addNavRow(month = '', nav = '', mgwd = '') {
+      const tbody = document.getElementById('navTableBody');
+      const row = document.createElement('tr');
       row.innerHTML = `
-        <div class="date"><label>Month (YYYY-MM)</label><input type="month" value="${month}" data-original="${month}"></div>
-        <div class="value"><label>Cumulative Return (%)</label><input type="number" step="0.01" value="${value}" data-original="${value}"></div>
-        <button type="button" class="remove-btn" onclick="this.parentElement.remove(); checkChanges();">Remove</button>
+        <td><input type="month" value="${month}" data-original="${month}" class="nav-input"></td>
+        <td><input type="number" step="0.0001" value="${nav}" data-original="${nav}" class="nav-input" placeholder="1.00"></td>
+        <td><input type="number" step="0.01" value="${mgwd}" data-original="${mgwd}" class="nav-input" placeholder="425.45"></td>
+        <td class="calc-cell month-pct">-</td>
+        <td class="calc-cell mgwd-pct">-</td>
+        <td class="calc-cell inception-pct">-</td>
+        <td class="calc-cell quarter-pct">-</td>
+        <td><button type="button" class="remove-btn" onclick="removeNavRow(this)">X</button></td>
       `;
-      container.appendChild(row);
-      row.querySelectorAll('input').forEach(i => i.addEventListener('input', checkChanges));
+      tbody.appendChild(row);
+      row.querySelectorAll('.nav-input').forEach(input => {
+        input.addEventListener('input', () => {
+          checkChanges();
+          recalculateAll();
+        });
+      });
+      recalculateAll();
+    }
+
+    function removeNavRow(btn) {
+      const row = btn.closest('tr');
+      const tbody = document.getElementById('navTableBody');
+      if (tbody.querySelectorAll('tr').length > 1) {
+        row.remove();
+        checkChanges();
+        recalculateAll();
+      } else {
+        alert('You must keep at least one month of data.');
+      }
+    }
+
+    function recalculateAll() {
+      const rows = document.querySelectorAll('#navTableBody tr');
+      const data = [];
+      
+      rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const month = inputs[0].value;
+        const nav = parseFloat(inputs[1].value) || 0;
+        const mgwd = parseFloat(inputs[2].value) || 0;
+        data.push({ month, nav, mgwd, row });
+      });
+      
+      data.sort((a, b) => a.month.localeCompare(b.month));
+      
+      const lbfReturns = [];
+      const mgwdReturns = [];
+      
+      data.forEach((item, idx) => {
+        let monthPct = 0;
+        let mgwdPct = 0;
+        let inceptionPct = 0;
+        let quarterPct = 0;
+        
+        if (idx > 0) {
+          const prev = data[idx - 1];
+          if (prev.nav > 0) monthPct = ((item.nav / prev.nav) - 1) * 100;
+          if (prev.mgwd > 0) mgwdPct = ((item.mgwd / prev.mgwd) - 1) * 100;
+          
+          lbfReturns.push(monthPct);
+          mgwdReturns.push(mgwdPct);
+          
+          let compound = 1;
+          for (let i = 1; i <= idx; i++) {
+            const r = ((data[i].nav / data[i-1].nav) - 1);
+            compound *= (1 + r);
+          }
+          inceptionPct = (compound - 1) * 100;
+          
+          const qMonths = Math.min(3, idx);
+          let qCompound = 1;
+          for (let i = idx - qMonths + 1; i <= idx; i++) {
+            if (i > 0) {
+              const r = ((data[i].nav / data[i-1].nav) - 1);
+              qCompound *= (1 + r);
+            }
+          }
+          quarterPct = (qCompound - 1) * 100;
+        }
+        
+        item.row.querySelector('.month-pct').textContent = idx > 0 ? monthPct.toFixed(1) + '%' : '-';
+        item.row.querySelector('.mgwd-pct').textContent = idx > 0 ? mgwdPct.toFixed(1) + '%' : '-';
+        item.row.querySelector('.inception-pct').textContent = idx > 0 ? inceptionPct.toFixed(1) + '%' : '-';
+        item.row.querySelector('.quarter-pct').textContent = idx > 0 ? quarterPct.toFixed(1) + '%' : '-';
+        
+        item.monthPct = monthPct;
+        item.mgwdPct = mgwdPct;
+        item.inceptionPct = inceptionPct;
+        item.quarterPct = quarterPct;
+      });
+      
+      if (data.length > 1) {
+        const lastItem = data[data.length - 1];
+        document.getElementById('calc_mtd').textContent = lastItem.monthPct.toFixed(1) + '%';
+        document.getElementById('calc_qtd').textContent = lastItem.quarterPct.toFixed(1) + '%';
+        
+        const fy26Data = data.filter(d => d.month >= '2025-07');
+        if (fy26Data.length > 0) {
+          let fy26Compound = 1;
+          for (let i = 0; i < fy26Data.length; i++) {
+            const currIdx = data.indexOf(fy26Data[i]);
+            if (currIdx > 0) {
+              const r = ((data[currIdx].nav / data[currIdx-1].nav) - 1);
+              fy26Compound *= (1 + r);
+            }
+          }
+          const fy26Pct = (fy26Compound - 1) * 100;
+          document.getElementById('calc_fy26').textContent = fy26Pct.toFixed(1) + '%';
+        } else {
+          document.getElementById('calc_fy26').textContent = '-';
+        }
+        
+        if (lbfReturns.length >= 12) {
+          let yr1Compound = 1;
+          const last12 = data.slice(-13);
+          for (let i = 1; i < last12.length; i++) {
+            const r = ((last12[i].nav / last12[i-1].nav) - 1);
+            yr1Compound *= (1 + r);
+          }
+          document.getElementById('calc_1yr').textContent = ((yr1Compound - 1) * 100).toFixed(1) + '%';
+        } else {
+          document.getElementById('calc_1yr').textContent = '-';
+        }
+        
+        if (lbfReturns.length > 0) {
+          const bestMonth = Math.max(...lbfReturns);
+          const worstMonth = Math.min(...lbfReturns);
+          const msciBest = Math.max(...mgwdReturns);
+          const msciWorst = Math.min(...mgwdReturns);
+          
+          document.getElementById('calc_best').textContent = bestMonth.toFixed(1) + '%';
+          document.getElementById('calc_worst').textContent = worstMonth.toFixed(1) + '%';
+          document.getElementById('calc_msci_best').textContent = msciBest.toFixed(1) + '%';
+          document.getElementById('calc_msci_worst').textContent = msciWorst.toFixed(1) + '%';
+          
+          const positiveMgwd = mgwdReturns.map((m, i) => ({ m, l: lbfReturns[i] })).filter(x => x.m > 0);
+          const negativeMgwd = mgwdReturns.map((m, i) => ({ m, l: lbfReturns[i] })).filter(x => x.m < 0);
+          
+          if (positiveMgwd.length > 0) {
+            const avgLbfUp = positiveMgwd.reduce((s, x) => s + x.l, 0) / positiveMgwd.length;
+            const avgMgwdUp = positiveMgwd.reduce((s, x) => s + x.m, 0) / positiveMgwd.length;
+            const upside = (avgLbfUp / avgMgwdUp) * 100;
+            document.getElementById('calc_upside').textContent = upside.toFixed(0) + '%';
+          } else {
+            document.getElementById('calc_upside').textContent = '-';
+          }
+          
+          if (negativeMgwd.length > 0) {
+            const avgLbfDown = negativeMgwd.reduce((s, x) => s + x.l, 0) / negativeMgwd.length;
+            const avgMgwdDown = negativeMgwd.reduce((s, x) => s + x.m, 0) / negativeMgwd.length;
+            const downside = (avgLbfDown / avgMgwdDown) * 100;
+            document.getElementById('calc_downside').textContent = downside.toFixed(0) + '%';
+          } else {
+            document.getElementById('calc_downside').textContent = '-';
+          }
+          
+          if (lbfReturns.length >= 2) {
+            const n = lbfReturns.length;
+            const sumX = mgwdReturns.reduce((a, b) => a + b, 0);
+            const sumY = lbfReturns.reduce((a, b) => a + b, 0);
+            const sumXY = mgwdReturns.reduce((s, x, i) => s + x * lbfReturns[i], 0);
+            const sumX2 = mgwdReturns.reduce((s, x) => s + x * x, 0);
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            document.getElementById('calc_beta').textContent = slope.toFixed(1);
+          } else {
+            document.getElementById('calc_beta').textContent = '-';
+          }
+        }
+      } else {
+        ['calc_mtd', 'calc_qtd', 'calc_fy26', 'calc_1yr', 'calc_best', 'calc_worst', 'calc_msci_best', 'calc_msci_worst', 'calc_upside', 'calc_downside', 'calc_beta'].forEach(id => {
+          document.getElementById(id).textContent = '-';
+        });
+      }
     }
 
     function addHoldingRow(name = '', weight = '') {
@@ -335,7 +532,7 @@
       const row = document.createElement('div');
       row.className = 'holding-row';
       row.innerHTML = `
-        <div class="name"><label>Name</label><input type="text" value="${name}" data-original="${name}"></div>
+        <div class="name"><label>Holding Name</label><input type="text" value="${name}" data-original="${name}"></div>
         <div class="weight"><label>Weight (%)</label><input type="number" step="0.01" value="${weight}" data-original="${weight}"></div>
         <button type="button" class="remove-btn" onclick="this.parentElement.remove(); checkChanges();">Remove</button>
       `;
@@ -348,7 +545,7 @@
       const row = document.createElement('div');
       row.className = 'exposure-row';
       row.innerHTML = `
-        <div class="name"><label>Sector Name</label><input type="text" value="${name}" data-original="${name}"></div>
+        <div class="name"><label>Sector</label><input type="text" value="${name}" data-original="${name}"></div>
         <div class="value"><label>Value (%)</label><input type="number" step="0.01" value="${value}" data-original="${value}"></div>
         <button type="button" class="remove-btn" onclick="this.parentElement.remove(); checkChanges();">Remove</button>
       `;
@@ -388,13 +585,18 @@
     async function saveData() {
       const token = sessionStorage.getItem('adminToken');
       
-      const chartData = [];
-      document.querySelectorAll('#chartContainer .chart-row').forEach(row => {
+      const monthlyData = [];
+      document.querySelectorAll('#navTableBody tr').forEach(row => {
         const inputs = row.querySelectorAll('input');
         if (inputs[0].value && inputs[1].value) {
-          chartData.push({ month: inputs[0].value, value: parseFloat(inputs[1].value) });
+          monthlyData.push({
+            month: inputs[0].value,
+            nav: parseFloat(inputs[1].value),
+            mgwd: parseFloat(inputs[2].value) || 0
+          });
         }
       });
+      monthlyData.sort((a, b) => a.month.localeCompare(b.month));
       
       const holdingsData = [];
       document.querySelectorAll('#holdingsContainer .holding-row').forEach(row => {
@@ -431,22 +633,11 @@
       
       const data = {
         performance: {
-          mtd: parseFloat(document.querySelector('[name="perf_mtd"]').value) || 0,
-          qtd: parseFloat(document.querySelector('[name="perf_qtd"]').value) || 0,
-          fy26: parseFloat(document.querySelector('[name="perf_fy26"]').value) || 0,
-          annualised: parseFloat(document.querySelector('[name="perf_annualised"]').value) || 0,
-          chart: chartData
+          monthlyData: monthlyData
         },
         stats: {
-          bestMonth: parseFloat(document.querySelector('[name="stats_best_month"]').value) || 0,
-          worstMonth: parseFloat(document.querySelector('[name="stats_worst_month"]').value) || 0,
-          msciBest: parseFloat(document.querySelector('[name="stats_msci_best"]').value) || 0,
-          msciWorst: parseFloat(document.querySelector('[name="stats_msci_worst"]').value) || 0,
-          upside: parseFloat(document.querySelector('[name="stats_upside"]').value) || 0,
-          downside: parseFloat(document.querySelector('[name="stats_downside"]').value) || 0,
           avgNet: parseFloat(document.querySelector('[name="stats_avg_net"]').value) || 0,
-          avgCash: parseFloat(document.querySelector('[name="stats_avg_cash"]').value) || 0,
-          beta: parseFloat(document.querySelector('[name="stats_beta"]').value) || 0
+          avgCash: parseFloat(document.querySelector('[name="stats_avg_cash"]').value) || 0
         },
         funds: {
           universe: document.querySelector('[name="fund_universe"]').value,

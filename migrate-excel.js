@@ -8,113 +8,94 @@ async function migrate() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
   try {
-    console.log("Reading Excel data...");
+    console.log("Migrating data to new format...");
 
-    const perfRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "Performance" });
-    const statsRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "Stats" });
-    const fundsRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "TheFund" });
-    const holdingsRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "Holdings" });
-    const exposureRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "Exposure" });
-    const textRows = await readXlsxFile("./LaserBeamExcel.xlsx", { sheet: "Text" });
-
-    const performance = { chart: [] };
-    let dateUpdated = null;
+    const monthlyData = [
+      { month: '2025-06', nav: 1.00, mgwd: 425.45 },
+      { month: '2025-07', nav: 1.03, mgwd: 438.94 },
+      { month: '2025-08', nav: 1.05, mgwd: 442.46 },
+      { month: '2025-09', nav: 1.09, mgwd: 452.79 },
+      { month: '2025-10', nav: 1.12, mgwd: 468.65 },
+      { month: '2025-11', nav: 1.12, mgwd: 467.77 },
+      { month: '2025-12', nav: 1.12, mgwd: 465.07 }
+    ];
     
-    for (let i = 1; i < perfRows.length; i++) {
-      const row = perfRows[i];
-      if (row[0] && row[1] !== null) {
-        const monthDate = new Date(row[0]);
-        const monthStr = monthDate.toISOString().substring(0, 7);
-        performance.chart.push({ month: monthStr, value: Math.round(row[1] * 100) });
+    const performance = {
+      monthlyData: monthlyData
+    };
+    
+    const stats = {
+      avgNet: 18,
+      avgCash: 72
+    };
+    
+    const funds = {
+      universe: 'Global',
+      holdings: '5-20',
+      target: '>10% net p.a.',
+      minInvestment: '$100k',
+      mgmtFee: 1,
+      perfFee: 20,
+      apir: 'NCC5451AU',
+      vehicle: 'Wholesale Unit Trust',
+      pm: 'Hayden Beamish'
+    };
+    
+    const holdings = [
+      { name: 'Reddit', weight: 5 },
+      { name: 'South32', weight: 4 },
+      { name: 'Unity Software', weight: 4 }
+    ];
+    
+    const exposure = {
+      sectors: [
+        { name: 'CASH', value: 62 },
+        { name: 'TECHNOLOGY', value: 14 },
+        { name: 'MATERIALS', value: 11 },
+        { name: 'FINANCIALS', value: 8 },
+        { name: 'OTHER', value: 5 }
+      ],
+      marketCap: [
+        { name: '>$10b', value: 84 },
+        { name: '$1b-$10b', value: 11 },
+        { name: '$500m-$1b', value: 0 },
+        { name: '$300m-$500m', value: 0 },
+        { name: '<$300m', value: 5 }
+      ],
+      grossLong: 52,
+      grossShort: -2,
+      net: 50
+    };
+    
+    const text = [
+      {
+        key: 'Strategy',
+        text: 'We run a concentrated, long biased portfolio of 5 to 20 positions, with flexibility to short mainly for hedging and risk management. We focus on quality businesses, sizing positions by conviction and risk reward, cutting losers quickly and letting winners compound. Ideas are sourced through deep fundamental research enhanced by proprietary AI analytics to uncover catalysts, growth themes and market dislocations. The Portfolio Manager is invested alongside clients.'
+      },
+      {
+        key: 'Hedging',
+        text: 'Hedging is part of our core process, not a trade. We aim to protect capital, smooth the return path and keep dry powder so we can play offence when others are forced to sell. We flex net exposure using index futures and options such as put spreads, collars and opportunistic call overwrites to neutralise market risk at low carry, add selective single name shorts where fundamentals are deteriorating or positioning is crowded, and hold cash when the opportunity set is thin.'
+      },
+      {
+        key: 'AI Analyst',
+        text: 'It ingests earnings calls, company filings, price and volume, options flow and credible web signals each day, then ranks what changed and why it matters. Language models flag guidance shifts, management tone, competitive pressure and anomalies that are easy to miss at speed, while pattern detection surfaces repeatable set ups and builds live watchlists with entry and exit levels, catalysts and risks. The output is concise one page briefs and scenario tests that support quicker and better sizing decisions. It augments our work, it does not decide, and every idea still passes a fundamental review before capital is risked.'
+      },
+      {
+        key: 'Risk Management',
+        text: 'We are return focused and drawdown aware. Risk is set before entry: every trade has defined downside, a stop loss, and a position size based on conviction, liquidity and risk reward within name and sector limits. Gross and net exposure sit inside bands, with hedges and shorts used to neutralise unintended risks. Liquidity comes first, supported by event playbooks and ongoing stress tests across rates, currency, factors and commodities; portfolio drawdown triggers force action. Independent trustee, administration and audit provide oversight with daily reconciliation, and the Portfolio Manager invests alongside clients.'
       }
-      if (row[3] && row[4] !== null) {
-        const label = row[3].toString().toLowerCase().replace(/\./g, '').replace(/ /g, '');
-        if (label.includes('mtd')) performance.mtd = Math.round(row[4] * 100);
-        else if (label.includes('qtd')) performance.qtd = Math.round(row[4] * 100);
-        else if (label.includes('fy26') || label.includes('fy')) performance.fy26 = Math.round(row[4] * 100);
-        else if (label.includes('annualised') || label.includes('annual')) performance.annualised = Math.round(row[4] * 100);
-      }
-      if (row[6]) dateUpdated = row[6];
-    }
-
-    const stats = {};
-    for (let i = 1; i < statsRows.length; i++) {
-      const row = statsRows[i];
-      if (row[0] && row[1] !== null) {
-        const key = row[0].toString().toLowerCase().replace(/\./g, '').replace(/ /g, '');
-        const value = Math.round(row[1] * 100);
-        if (key.includes('bestmonth')) stats.bestMonth = value;
-        else if (key.includes('worstmonth')) stats.worstMonth = value;
-        else if (key.includes('mscibest') || key.includes('msciawall') && key.includes('best')) stats.msciBest = value;
-        else if (key.includes('msciworst') || key.includes('msciawall') && key.includes('worst')) stats.msciWorst = value;
-        else if (key.includes('upside')) stats.upside = value;
-        else if (key.includes('downside')) stats.downside = value;
-        else if (key.includes('avgnet')) stats.avgNet = value;
-        else if (key.includes('avgcash')) stats.avgCash = value;
-        else if (key.includes('beta')) stats.beta = value;
-      }
-    }
-
-    const funds = {};
-    for (let i = 1; i < fundsRows.length; i++) {
-      const row = fundsRows[i];
-      if (row[0]) {
-        const key = row[0].toString().toLowerCase().replace(/\./g, '').replace(/ /g, '');
-        const value = row[1];
-        if (key.includes('universe')) funds.universe = value;
-        else if (key.includes('holdings')) funds.holdings = value;
-        else if (key.includes('target')) funds.target = value;
-        else if (key.includes('mininvestment') || key.includes('min')) funds.minInvestment = value;
-        else if (key.includes('mgmtfee') || key.includes('mgmt')) funds.mgmtFee = typeof value === 'number' ? Math.round(value * 100) : value;
-        else if (key.includes('perffee') || key.includes('perf')) funds.perfFee = typeof value === 'number' ? Math.round(value * 100) : value;
-        else if (key.includes('apir')) funds.apir = value;
-        else if (key.includes('vehicle')) funds.vehicle = value;
-        else if (key.includes('pm')) funds.pm = value;
-      }
-    }
-
-    const holdings = [];
-    for (let i = 1; i < holdingsRows.length; i++) {
-      const row = holdingsRows[i];
-      if (row[0] && row[1] !== null) {
-        holdings.push({ name: row[0], weight: Math.round(row[1] * 100) });
-      }
-    }
-
-    const exposure = { sectors: [], marketCap: [] };
-    for (let i = 1; i < exposureRows.length; i++) {
-      const row = exposureRows[i];
-      if (row[0] && row[1] !== null) {
-        const key = row[0].toString().toLowerCase();
-        if (key.includes('grosslong') || key.includes('gross long')) exposure.grossLong = Math.round(row[1] * 100);
-        else if (key.includes('grossshort') || key.includes('gross short')) exposure.grossShort = Math.round(row[1] * 100);
-        else if (key === 'net' || key.includes('net exposure')) exposure.net = Math.round(row[1] * 100);
-      }
-      if (row[3] && row[4] !== null) {
-        exposure.sectors.push({ name: row[3], value: Math.round(row[4] * 100) });
-      }
-      if (row[6] && row[7] !== null) {
-        exposure.marketCap.push({ name: row[6], value: Math.round(row[7] * 100) });
-      }
-    }
-
-    const text = [];
-    for (let i = 1; i < textRows.length; i++) {
-      const row = textRows[i];
-      if (row[0] && row[1]) {
-        text.push({ key: row[0], text: row[1] });
-      }
-    }
-
-    console.log("Migrating to database...");
-    console.log("Performance:", performance);
+    ];
+    
+    console.log("Monthly Data:", monthlyData);
     console.log("Stats:", stats);
     console.log("Funds:", funds);
     console.log("Holdings:", holdings);
     console.log("Exposure:", exposure);
-    console.log("Text:", text);
+    console.log("Text sections:", text.length);
 
     await pool.query("DELETE FROM site_data");
+    
+    const now = new Date();
     await pool.query(
       `INSERT INTO site_data (performance, stats, funds, holdings, exposure, text, date_updated, created_at) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
@@ -125,7 +106,7 @@ async function migrate() {
         JSON.stringify(holdings),
         JSON.stringify(exposure),
         JSON.stringify(text),
-        dateUpdated || new Date()
+        now
       ]
     );
 
