@@ -227,11 +227,17 @@ function calculatePerformanceMetrics(monthlyData) {
     const prev = sorted[i - 1];
     const curr = sorted[i];
     
-    const lbfReturn = prev.nav > 0 ? ((curr.nav / prev.nav) - 1) : 0;
-    const mgwdReturn = prev.mgwd > 0 ? ((curr.mgwd / prev.mgwd) - 1) : 0;
+    if (curr.nav == null || prev.nav == null || prev.nav <= 0) {
+      continue;
+    }
     
+    const lbfReturn = (curr.nav / prev.nav) - 1;
     lbfReturns.push(lbfReturn * 100);
-    mgwdReturns.push(mgwdReturn * 100);
+    
+    if (curr.mgwd != null && prev.mgwd != null && prev.mgwd > 0) {
+      const mgwdReturn = (curr.mgwd / prev.mgwd) - 1;
+      mgwdReturns.push({ lbf: lbfReturn * 100, mgwd: mgwdReturn * 100 });
+    }
     
     inceptionCompound *= (1 + lbfReturn);
     chart.push({
@@ -275,33 +281,35 @@ function calculatePerformanceMetrics(monthlyData) {
   
   const bestMonth = lbfReturns.length > 0 ? Math.max(...lbfReturns) : 0;
   const worstMonth = lbfReturns.length > 0 ? Math.min(...lbfReturns) : 0;
-  const msciBest = mgwdReturns.length > 0 ? Math.max(...mgwdReturns) : 0;
-  const msciWorst = mgwdReturns.length > 0 ? Math.min(...mgwdReturns) : 0;
   
-  const positiveMgwd = mgwdReturns.map((m, i) => ({ m, l: lbfReturns[i] })).filter(x => x.m > 0);
-  const negativeMgwd = mgwdReturns.map((m, i) => ({ m, l: lbfReturns[i] })).filter(x => x.m < 0);
+  const mgwdVals = mgwdReturns.map(x => x.mgwd);
+  const msciBest = mgwdVals.length > 0 ? Math.max(...mgwdVals) : 0;
+  const msciWorst = mgwdVals.length > 0 ? Math.min(...mgwdVals) : 0;
+  
+  const positiveMgwd = mgwdReturns.filter(x => x.mgwd > 0);
+  const negativeMgwd = mgwdReturns.filter(x => x.mgwd < 0);
   
   let upside = 0;
   if (positiveMgwd.length > 0) {
-    const avgLbfUp = positiveMgwd.reduce((s, x) => s + x.l, 0) / positiveMgwd.length;
-    const avgMgwdUp = positiveMgwd.reduce((s, x) => s + x.m, 0) / positiveMgwd.length;
+    const avgLbfUp = positiveMgwd.reduce((s, x) => s + x.lbf, 0) / positiveMgwd.length;
+    const avgMgwdUp = positiveMgwd.reduce((s, x) => s + x.mgwd, 0) / positiveMgwd.length;
     upside = (avgLbfUp / avgMgwdUp) * 100;
   }
   
   let downside = 0;
   if (negativeMgwd.length > 0) {
-    const avgLbfDown = negativeMgwd.reduce((s, x) => s + x.l, 0) / negativeMgwd.length;
-    const avgMgwdDown = negativeMgwd.reduce((s, x) => s + x.m, 0) / negativeMgwd.length;
+    const avgLbfDown = negativeMgwd.reduce((s, x) => s + x.lbf, 0) / negativeMgwd.length;
+    const avgMgwdDown = negativeMgwd.reduce((s, x) => s + x.mgwd, 0) / negativeMgwd.length;
     downside = (avgLbfDown / avgMgwdDown) * 100;
   }
   
   let beta = 0;
-  if (lbfReturns.length >= 2 && mgwdReturns.length >= 2) {
-    const n = lbfReturns.length;
-    const sumX = mgwdReturns.reduce((a, b) => a + b, 0);
-    const sumY = lbfReturns.reduce((a, b) => a + b, 0);
-    const sumXY = mgwdReturns.reduce((s, x, i) => s + x * lbfReturns[i], 0);
-    const sumX2 = mgwdReturns.reduce((s, x) => s + x * x, 0);
+  if (mgwdReturns.length >= 2) {
+    const n = mgwdReturns.length;
+    const sumX = mgwdReturns.reduce((a, x) => a + x.mgwd, 0);
+    const sumY = mgwdReturns.reduce((a, x) => a + x.lbf, 0);
+    const sumXY = mgwdReturns.reduce((s, x) => s + x.mgwd * x.lbf, 0);
+    const sumX2 = mgwdReturns.reduce((s, x) => s + x.mgwd * x.mgwd, 0);
     const denom = n * sumX2 - sumX * sumX;
     if (denom !== 0) {
       beta = (n * sumXY - sumX * sumY) / denom;
