@@ -35,9 +35,17 @@ PostgreSQL database with simplified schema:
 - `GET /api/admin/data` - Load all site data (requires auth)
 - `POST /api/admin/data` - Save all site data (requires auth, full overwrite)
 
+### Service Endpoints (for Make.com / automation)
+- `POST /api/service/performance/nav` - Upsert monthly NAV (requires SERVICE_TOKEN)
+  - Body: `{ "month": "YYYY-MM", "nav": 1.125 }`
+  - Creates new month or updates existing; auto-sorts by month
+- `GET /api/service/performance/latest` - Get latest month's data (requires SERVICE_TOKEN)
+  - Returns: `{ "data": { "month", "nav", "mgwd" }, "totalMonths" }`
+
 ## Environment Variables (Secrets)
 - `ADMIN_PASSWORD` - Password for admin login
 - `BEEHIIV_API_KEY` - Beehiiv API key for blog posts
+- `SERVICE_TOKEN` - Token for Make.com automation (used in Authorization header)
 - `DATABASE_URL` - PostgreSQL connection string (auto-provided by Replit)
 
 ## Admin Panel Features
@@ -81,6 +89,7 @@ PostgreSQL database with simplified schema:
 ```
 
 ## Recent Changes (Dec 2025)
+- **NEW**: Make.com service endpoints for automated NAV updates from SharePoint/email
 - **NEW**: Redesigned admin panel with NAV/MGWD input and auto-calculated metrics
 - **NEW**: Performance metrics now calculated server-side from raw NAV/MGWD data
 - **NEW**: Text content section added for Strategy, Hedging, AI Analyst, Risk Management
@@ -90,3 +99,11 @@ PostgreSQL database with simplified schema:
 - Created optimized /api/performance endpoint for frontend
 - Added admin authentication using ADMIN_PASSWORD secret
 - Moved Beehiiv API key to environment variable
+
+## Make.com Integration Guide
+1. In Make.com, add a SharePoint "Watch Rows" or "Get file content" module to read NAV from your spreadsheet
+2. Add an HTTP module to POST to: `https://YOUR-REPLIT-URL/api/service/performance/nav`
+3. Set Headers: `Authorization: Bearer YOUR_SERVICE_TOKEN`, `Content-Type: application/json`
+4. Set Body: `{"month": "{{month_from_spreadsheet}}", "nav": {{nav_value}}}`
+5. The endpoint will create a new month if it doesn't exist, or update the NAV if it does
+6. MGWD Index still needs to be entered manually via the admin portal (or add another automation)
