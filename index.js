@@ -13,7 +13,9 @@ app.use(cors({
   origin: function(origin, callback) {
     const allowedOrigins = [
       'https://www.laserbeamcapital.com',
-      'https://laserbeamcapital.com'
+      'https://laserbeamcapital.com',
+      'http://localhost:5000',
+      'http://127.0.0.1:5000'
     ];
     if (!origin || allowedOrigins.includes(origin) || /\.replit\.dev$/.test(origin)) {
       callback(null, true);
@@ -21,6 +23,7 @@ app.use(cors({
       callback(null, false);
     }
   },
+  methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true
 }));
 app.use(express.json());
