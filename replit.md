@@ -112,6 +112,7 @@ Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories
 - Uses yahoo-finance2 Node.js library with p-limit for rate limiting
 - Fetches ~400 days of historical data per ticker to calculate moving averages
 - 20-minute in-memory cache to avoid rate limits
+- **Scheduled refreshes at 4:30am, 5:30am, 6:30am, 1:30pm, 2:30pm WST**
 - Trading day lookbacks: 1d=1, 1m=21, 1q=63, 1y=252 days
 - Moving average windows: 10, 20, 100, 200 days
 - Ticker mapping stored in `ticker_map.json`
