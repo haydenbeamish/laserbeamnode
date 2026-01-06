@@ -16,7 +16,6 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN;
 const tokens = new Set();
 
 function generateToken() {
@@ -31,18 +30,6 @@ function authMiddleware(req, res, next) {
   const token = authHeader.split(" ")[1];
   if (!tokens.has(token)) {
     return res.status(401).json({ success: false, message: "Invalid token" });
-  }
-  next();
-}
-
-function serviceAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
-  }
-  const token = authHeader.split(" ")[1];
-  if (!SERVICE_TOKEN || token !== SERVICE_TOKEN) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
   }
   next();
 }
@@ -119,91 +106,6 @@ app.post("/api/admin/data", authMiddleware, async (req, res) => {
   }
 });
 
-app.post("/api/service/performance/nav", serviceAuth, async (req, res) => {
-  try {
-    let { month, nav } = req.body;
-    
-    if (!month || typeof month !== "string") {
-      return res.status(400).json({ success: false, message: "Invalid month format" });
-    }
-    month = month.substring(0, 7);
-    if (!/^\d{4}-\d{2}$/.test(month)) {
-      return res.status(400).json({ success: false, message: "Month must be YYYY-MM format" });
-    }
-    
-    nav = parseFloat(nav);
-    if (!isFinite(nav) || nav <= 0) {
-      return res.status(400).json({ success: false, message: "NAV must be a positive number" });
-    }
-    
-    const result = await pool.query("SELECT * FROM site_data ORDER BY id DESC LIMIT 1");
-    const now = new Date();
-    
-    if (result.rows.length === 0) {
-      const newData = {
-        performance: { monthlyData: [{ month, nav, mgwd: null }] },
-        stats: {}, funds: [], holdings: [], exposure: {}, text: []
-      };
-      await pool.query(
-        `INSERT INTO site_data (performance, stats, funds, holdings, exposure, text, date_updated, created_at) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
-        [JSON.stringify(newData.performance), JSON.stringify(newData.stats), JSON.stringify(newData.funds),
-         JSON.stringify(newData.holdings), JSON.stringify(newData.exposure), JSON.stringify(newData.text), now]
-      );
-      return res.json({ success: true, month, nav, dateUpdated: now.toISOString() });
-    }
-    
-    const row = result.rows[0];
-    const performance = row.performance || { monthlyData: [] };
-    if (!Array.isArray(performance.monthlyData)) {
-      performance.monthlyData = [];
-    }
-    
-    const existingIndex = performance.monthlyData.findIndex(m => m.month === month);
-    if (existingIndex >= 0) {
-      performance.monthlyData[existingIndex].nav = nav;
-    } else {
-      performance.monthlyData.push({ month, nav, mgwd: null });
-    }
-    
-    performance.monthlyData.sort((a, b) => a.month.localeCompare(b.month));
-    
-    await pool.query(
-      "UPDATE site_data SET performance = $1, date_updated = $2 WHERE id = $3",
-      [JSON.stringify(performance), now, row.id]
-    );
-    
-    res.json({ success: true, month, nav, dateUpdated: now.toISOString() });
-  } catch (err) {
-    console.error("Error updating NAV:", err);
-    res.status(500).json({ success: false, message: "Database error" });
-  }
-});
-
-app.get("/api/service/performance/latest", serviceAuth, async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM site_data ORDER BY id DESC LIMIT 1");
-    if (result.rows.length === 0) {
-      return res.json({ success: true, data: null });
-    }
-    const performance = result.rows[0].performance || { monthlyData: [] };
-    const monthlyData = performance.monthlyData || [];
-    if (monthlyData.length === 0) {
-      return res.json({ success: true, data: null });
-    }
-    const sorted = [...monthlyData].sort((a, b) => a.month.localeCompare(b.month));
-    const latest = sorted[sorted.length - 1];
-    res.json({ 
-      success: true, 
-      data: { month: latest.month, nav: latest.nav, mgwd: latest.mgwd },
-      totalMonths: sorted.length
-    });
-  } catch (err) {
-    console.error("Error fetching latest:", err);
-    res.status(500).json({ success: false, message: "Database error" });
-  }
-});
-
 const DISCLAIMER = "Past performance is not a reliable indicator of future performance. Hedge Partners Pty Ltd ACN 685 627 954, trading as Laser Beam Capital is a Corporate Authorised Representative (CAR No. 1314946) of Non Correlated Advisors Pty Ltd ACN 158 314 982 (AFSL No. 430126). Authorised to provide general advice to wholesale investors only.";
 
 function calculatePerformanceMetrics(monthlyData) {
@@ -227,17 +129,11 @@ function calculatePerformanceMetrics(monthlyData) {
     const prev = sorted[i - 1];
     const curr = sorted[i];
     
-    if (curr.nav == null || prev.nav == null || prev.nav <= 0) {
-      continue;
-    }
+    const lbfReturn = prev.nav > 0 ? ((curr.nav / prev.nav) - 1) : 0;
+    const mgwdReturn = prev.mgwd > 0 ? ((curr.mgwd / prev.mgwd) - 1) : 0;
     
-    const lbfReturn = (curr.nav / prev.nav) - 1;
     lbfReturns.push(lbfReturn * 100);
-    
-    if (curr.mgwd != null && prev.mgwd != null && prev.mgwd > 0) {
-      const mgwdReturn = (curr.mgwd / prev.mgwd) - 1;
-      mgwdReturns.push({ lbf: lbfReturn * 100, mgwd: mgwdReturn * 100 });
-    }
+    mgwdReturns.push(mgwdReturn * 100);
     
     inceptionCompound *= (1 + lbfReturn);
     chart.push({
@@ -281,35 +177,33 @@ function calculatePerformanceMetrics(monthlyData) {
   
   const bestMonth = lbfReturns.length > 0 ? Math.max(...lbfReturns) : 0;
   const worstMonth = lbfReturns.length > 0 ? Math.min(...lbfReturns) : 0;
+  const msciBest = mgwdReturns.length > 0 ? Math.max(...mgwdReturns) : 0;
+  const msciWorst = mgwdReturns.length > 0 ? Math.min(...mgwdReturns) : 0;
   
-  const mgwdVals = mgwdReturns.map(x => x.mgwd);
-  const msciBest = mgwdVals.length > 0 ? Math.max(...mgwdVals) : 0;
-  const msciWorst = mgwdVals.length > 0 ? Math.min(...mgwdVals) : 0;
-  
-  const positiveMgwd = mgwdReturns.filter(x => x.mgwd > 0);
-  const negativeMgwd = mgwdReturns.filter(x => x.mgwd < 0);
+  const positiveMgwd = mgwdReturns.map((m, i) => ({ m, l: lbfReturns[i] })).filter(x => x.m > 0);
+  const negativeMgwd = mgwdReturns.map((m, i) => ({ m, l: lbfReturns[i] })).filter(x => x.m < 0);
   
   let upside = 0;
   if (positiveMgwd.length > 0) {
-    const avgLbfUp = positiveMgwd.reduce((s, x) => s + x.lbf, 0) / positiveMgwd.length;
-    const avgMgwdUp = positiveMgwd.reduce((s, x) => s + x.mgwd, 0) / positiveMgwd.length;
+    const avgLbfUp = positiveMgwd.reduce((s, x) => s + x.l, 0) / positiveMgwd.length;
+    const avgMgwdUp = positiveMgwd.reduce((s, x) => s + x.m, 0) / positiveMgwd.length;
     upside = (avgLbfUp / avgMgwdUp) * 100;
   }
   
   let downside = 0;
   if (negativeMgwd.length > 0) {
-    const avgLbfDown = negativeMgwd.reduce((s, x) => s + x.lbf, 0) / negativeMgwd.length;
-    const avgMgwdDown = negativeMgwd.reduce((s, x) => s + x.mgwd, 0) / negativeMgwd.length;
+    const avgLbfDown = negativeMgwd.reduce((s, x) => s + x.l, 0) / negativeMgwd.length;
+    const avgMgwdDown = negativeMgwd.reduce((s, x) => s + x.m, 0) / negativeMgwd.length;
     downside = (avgLbfDown / avgMgwdDown) * 100;
   }
   
   let beta = 0;
-  if (mgwdReturns.length >= 2) {
-    const n = mgwdReturns.length;
-    const sumX = mgwdReturns.reduce((a, x) => a + x.mgwd, 0);
-    const sumY = mgwdReturns.reduce((a, x) => a + x.lbf, 0);
-    const sumXY = mgwdReturns.reduce((s, x) => s + x.mgwd * x.lbf, 0);
-    const sumX2 = mgwdReturns.reduce((s, x) => s + x.mgwd * x.mgwd, 0);
+  if (lbfReturns.length >= 2 && mgwdReturns.length >= 2) {
+    const n = lbfReturns.length;
+    const sumX = mgwdReturns.reduce((a, b) => a + b, 0);
+    const sumY = lbfReturns.reduce((a, b) => a + b, 0);
+    const sumXY = mgwdReturns.reduce((s, x, i) => s + x * lbfReturns[i], 0);
+    const sumX2 = mgwdReturns.reduce((s, x) => s + x * x, 0);
     const denom = n * sumX2 - sumX * sumX;
     if (denom !== 0) {
       beta = (n * sumXY - sumX * sumY) / denom;
