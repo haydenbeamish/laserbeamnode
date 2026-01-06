@@ -1,103 +1,778 @@
 {
-  "XJO": {"disp": "XJO", "source": "stocks.load", "symbol": "^AXJO", "cat": "Global Markets", "bb": "XJO Index", "co": "S&P/ASX 200"},
-  "HSI": {"disp": "HSI", "source": "stocks.load", "symbol": "^HSI", "cat": "Global Markets", "bb": "HSI Index", "co": "Hang Seng"},
-  "DJI": {"disp": "DJI", "source": "stocks.load", "symbol": "^DJI", "cat": "Global Markets", "bb": "DJI Index", "co": "Dow Jones Industrial Avg"},
-  "SPX": {"disp": "SPX", "source": "stocks.load", "symbol": "^GSPC", "cat": "Global Markets", "bb": "SPX Index", "co": "S&P 500"},
-  "NDX": {"disp": "NDX", "source": "stocks.load", "symbol": "^NDX", "cat": "Global Markets", "bb": "NDX Index", "co": "Nasdaq 100"},
-  "RUT": {"disp": "RUT", "source": "stocks.load", "symbol": "^RUT", "cat": "Global Markets", "bb": "RUT Index", "co": "Russell 2000"},
-  "AS30": {"disp": "AS30", "source": "stocks.load", "symbol": "^AORD", "cat": "Global Markets", "bb": "AS30 Index", "co": "ALL ORDINARIES INDX"},
-  "SHSZ300": {"disp": "SHSZ300", "source": "stocks.load", "symbol": "000300.SS", "cat": "Global Markets", "bb": "SHSZ300 Index", "co": "China 300"},
-  "NKY": {"disp": "NKY", "source": "stocks.load", "symbol": "^N225", "cat": "Global Markets", "bb": "NKY Index", "co": "Nikkei"},
-  "BTCQ5": {"disp": "BTCQ5", "source": "crypto.load", "symbol": "BTC-USD", "cat": "Global Markets", "bb": "BTCA Curncy", "co": "Bitcoin"},
-  "SX5E": {"disp": "SX5E", "source": "stocks.load", "symbol": "^STOXX50E", "cat": "Global Markets", "bb": "SX5E Index", "co": "Euro Stoxx"},
-  "UX1": {"disp": "UX1", "source": "stocks.load", "symbol": "^VIX", "cat": "Global Markets", "bb": "UX1 Index", "co": "VIX"},
-  "AS38": {"disp": "AS38", "source": "stocks.load", "symbol": "^AXSO", "cat": "ASX Indices", "bb": "AS38 Index", "co": "ASX Small Ords"},
-  "AS40": {"disp": "AS40", "source": "stocks.load", "symbol": "^AXVI", "cat": "ASX Indices", "bb": "AS40 Index", "co": "ASX Small Industrials"},
-  "AS39": {"disp": "AS39", "source": "stocks.load", "symbol": "^AXSR", "cat": "ASX Indices", "bb": "AS39 Index", "co": "ASX Small Resources"},
-  "AS34": {"disp": "AS34", "source": "stocks.load", "symbol": "^AXMD", "cat": "ASX Indices", "bb": "AS34 Index", "co": "ASX Mid Cap"},
-  "AS52MATL": {"disp": "AS52MATL", "source": "stocks.load", "symbol": "^AXMJ", "cat": "ASX Sectors", "bb": "AS52MATL Index", "co": "Materials"},
-  "AS52FIN": {"disp": "AS52FIN", "source": "stocks.load", "symbol": "^AXFJ", "cat": "ASX Sectors", "bb": "AS52FIN Index", "co": "Financials"},
-  "AS52HC": {"disp": "AS52HC", "source": "stocks.load", "symbol": "^AXHJ", "cat": "ASX Sectors", "bb": "AS52HC Index", "co": "Healthcare"},
-  "AS52INDU": {"disp": "AS52INDU", "source": "stocks.load", "symbol": "^AXNJ", "cat": "ASX Sectors", "bb": "AS52INDU Index", "co": "Industrials"},
-  "AS52COND": {"disp": "AS52COND", "source": "stocks.load", "symbol": "^AXDJ", "cat": "ASX Sectors", "bb": "AS52COND Index", "co": "Consumer Discretionary"},
-  "AS52REAL": {"disp": "AS52REAL", "source": "stocks.load", "symbol": "^AXPJ", "cat": "ASX Sectors", "bb": "AS52REAL Index", "co": "Real Estate"},
-  "AS52ENGY": {"disp": "AS52ENGY", "source": "stocks.load", "symbol": "^AXEJ", "cat": "ASX Sectors", "bb": "AS52ENGY Index", "co": "Energy"},
-  "AS52TELE": {"disp": "AS52TELE", "source": "stocks.load", "symbol": "^AXTJ", "cat": "ASX Sectors", "bb": "AS52TELE Index", "co": "Communication Services"},
-  "AS52CONS": {"disp": "AS52CONS", "source": "stocks.load", "symbol": "^AXSJ", "cat": "ASX Sectors", "bb": "AS52CONS Index", "co": "Consumer Staples"},
-  "AS52IT": {"disp": "AS52IT", "source": "stocks.load", "symbol": "^AXIJ", "cat": "ASX Sectors", "bb": "AS52IT Index", "co": "Technology"},
-  "AS52UTIL": {"disp": "AS52UTIL", "source": "stocks.load", "symbol": "^AXUJ", "cat": "ASX Sectors", "bb": "AS52UTIL Index", "co": "Utilities"},
-  "CL1": {"disp": "CL1", "source": "stocks.load", "symbol": "CL=F", "cat": "Commodities", "bb": "CL1 Comdty", "co": "Crude Oil"},
-  "UXA1": {"disp": "UXA1", "source": "stocks.load", "symbol": "URA", "cat": "Commodities", "bb": "UXA1 Comdty", "co": "Uranium"},
-  "XAU": {"disp": "XAU", "source": "stocks.load", "symbol": "GC=F", "cat": "Commodities", "bb": "XAU Curncy", "co": "Gold"},
-  "SCO1": {"disp": "SCO1", "source": "stocks.load", "symbol": "DBC", "cat": "Commodities", "bb": "SCO1 COMB Comdty", "co": "Commodity Basket"},
-  "IACQ5": {"disp": "IACQ5", "source": "stocks.load", "symbol": "^COAL", "cat": "Commodities", "bb": "IACA Comdty", "co": "Coking Coal"},
-  "XWU5": {"disp": "XWU5", "source": "stocks.load", "symbol": "^COAL", "cat": "Commodities", "bb": "XWA Comdty", "co": "Newcastle Coal"},
-  "LMCADY": {"disp": "LMCADY", "source": "stocks.load", "symbol": "CPER", "cat": "Commodities", "bb": "LMCADY Comdty", "co": "Copper"},
-  "LMNIDY": {"disp": "LMNIDY", "source": "stocks.load", "symbol": "JJN", "cat": "Commodities", "bb": "LMNIDY Comdty", "co": "Nickel"},
-  "LIT": {"disp": "LIT", "source": "stocks.load", "symbol": "LIT", "cat": "Commodities", "bb": "LIT US EQUITY", "co": "Lithium ETF"},
-  "AUDJPY": {"disp": "AUDJPY", "source": "stocks.load", "symbol": "AUDJPY=X", "cat": "Forex", "bb": "AUDJPY Curncy", "co": "AUD JPY"},
-  "AUDUSD": {"disp": "AUDUSD", "source": "stocks.load", "symbol": "AUDUSD=X", "cat": "Forex", "bb": "AUDUSD Curncy", "co": "AUD USD"},
-  "USDJPY": {"disp": "USDJPY", "source": "stocks.load", "symbol": "USDJPY=X", "cat": "Forex", "bb": "USDJPY Curncy", "co": "USD JPY"},
-  "DXY": {"disp": "DXY", "source": "stocks.load", "symbol": "DX-Y.NYB", "cat": "Forex", "bb": "DXY Curncy", "co": "US Dollar"},
-  "GACGB10": {"disp": "GACGB10", "source": "economy.fred", "symbol": "IRLTLT01AUM156N", "cat": "Bonds", "bb": "GACGB10 INDEX", "co": "Aus 10 Yr Yield"},
-  "USGG30YR": {"disp": "USGG30YR", "source": "stocks.load", "symbol": "^TYX", "cat": "Bonds", "bb": "USGG30YR index", "co": "US 30 Yr Yield"},
-  "USGG10YR": {"disp": "USGG10YR", "source": "economy.fred", "symbol": "DGS10", "cat": "Bonds", "bb": "USGG10YR index", "co": "US 10 Yr Yield"},
-  "GJGB10": {"disp": "GJGB10", "source": "economy.fred", "symbol": "IRLTLT01JPM156N", "cat": "Bonds", "bb": "GJGB10 INDEX", "co": "Japan 10 Yr Yield"},
-  "GECU10YR": {"disp": "GECU10YR", "source": "economy.fred", "symbol": "IRLTLT01EUM156N", "cat": "Bonds", "bb": "GECU10Y INDEX", "co": "Euro 10 Yr Yield"},
-  "PBJ": {"disp": "PBJ", "source": "stocks.load", "symbol": "PBJ", "cat": "Thematics", "bb": "PBJ US EQUITY", "co": "Food & Beverage"},
-  "BOAT": {"disp": "BOAT", "source": "stocks.load", "symbol": "BOAT", "cat": "Thematics", "bb": "BOAT US EQUITY", "co": "Global Shipping"},
-  "MOO": {"disp": "MOO", "source": "stocks.load", "symbol": "MOO", "cat": "Thematics", "bb": "MOO US EQUITY", "co": "Agribusiness"},
-  "COPX": {"disp": "COPX", "source": "stocks.load", "symbol": "COPX", "cat": "Thematics", "bb": "COPX US EQUITY", "co": "Copper Miners"},
-  "ROBO": {"disp": "ROBO", "source": "stocks.load", "symbol": "ROBO", "cat": "Thematics", "bb": "ROBO US EQUITY", "co": "Robotics & Automation"},
-  "BOTZ": {"disp": "BOTZ", "source": "stocks.load", "symbol": "BOTZ", "cat": "Thematics", "bb": "BOTZ US EQUITY", "co": "Robots & AI"},
-  "SPYV": {"disp": "SPYV", "source": "stocks.load", "symbol": "SPYV", "cat": "Thematics", "bb": "SPYV US EQUITY", "co": "S&P 500 Value"},
-  "PEJ": {"disp": "PEJ", "source": "stocks.load", "symbol": "PEJ", "cat": "Thematics", "bb": "PEJ US EQUITY", "co": "Entertainment"},
-  "DRIV": {"disp": "DRIV", "source": "stocks.load", "symbol": "DRIV", "cat": "Thematics", "bb": "DRIV US EQUITY", "co": "Automation & EV"},
-  "PAVE": {"disp": "PAVE", "source": "stocks.load", "symbol": "PAVE", "cat": "Thematics", "bb": "PAVE US EQUITY", "co": "Global Infrastructure"},
-  "QQQE": {"disp": "QQQE", "source": "stocks.load", "symbol": "QQQE", "cat": "Thematics", "bb": "QQQE US EQUITY", "co": "QQQ Equal-Weight"},
-  "SLX": {"disp": "SLX", "source": "stocks.load", "symbol": "SLX", "cat": "Thematics", "bb": "SLX US EQUITY", "co": "Steel"},
-  "CIBR": {"disp": "CIBR", "source": "stocks.load", "symbol": "CIBR", "cat": "Thematics", "bb": "CIBR US EQUITY", "co": "Cyber Security"},
-  "FXI": {"disp": "FXI", "source": "stocks.load", "symbol": "FXI", "cat": "Thematics", "bb": "FXI US EQUITY", "co": "China Large-Cap"},
-  "SPYG": {"disp": "SPYG", "source": "stocks.load", "symbol": "SPYG", "cat": "Thematics", "bb": "SPYG US EQUITY", "co": "S&P 500 Growth"},
-  "IBUY": {"disp": "IBUY", "source": "stocks.load", "symbol": "IBUY", "cat": "Thematics", "bb": "IBUY US EQUITY", "co": "Online Retail"},
-  "PBW": {"disp": "PBW", "source": "stocks.load", "symbol": "PBW", "cat": "Thematics", "bb": "PBW US EQUITY", "co": "Clean Energy"},
-  "USO": {"disp": "USO", "source": "stocks.load", "symbol": "USO", "cat": "Thematics", "bb": "USO US EQUITY", "co": "United States Oil"},
-  "WCLD": {"disp": "WCLD", "source": "stocks.load", "symbol": "WCLD", "cat": "Thematics", "bb": "WCLD US EQUITY", "co": "Cloud Computing"},
-  "IPAY": {"disp": "IPAY", "source": "stocks.load", "symbol": "IPAY", "cat": "Thematics", "bb": "IPAY US EQUITY", "co": "Mobile Payment"},
-  "GBTC": {"disp": "GBTC", "source": "stocks.load", "symbol": "GBTC", "cat": "Thematics", "bb": "GBTC US EQUITY", "co": "Bitcoin Trust"},
-  "BUZZ": {"disp": "BUZZ", "source": "stocks.load", "symbol": "BUZZ", "cat": "Thematics", "bb": "BUZZ US EQUITY", "co": "Social Sentiment"},
-  "FCG": {"disp": "FCG", "source": "stocks.load", "symbol": "FCG", "cat": "Thematics", "bb": "FCG US EQUITY", "co": "Natural Gas"},
-  "FFTY": {"disp": "FFTY", "source": "stocks.load", "symbol": "FFTY", "cat": "Thematics", "bb": "FFTY US EQUITY", "co": "IBD 50"},
-  "JETS": {"disp": "JETS", "source": "stocks.load", "symbol": "JETS", "cat": "Thematics", "bb": "JETS US EQUITY", "co": "Airlines"},
-  "BLOK": {"disp": "BLOK", "source": "stocks.load", "symbol": "BLOK", "cat": "Thematics", "bb": "BLOK US EQUITY", "co": "Crypto Related"},
-  "XHB": {"disp": "XHB", "source": "stocks.load", "symbol": "XHB", "cat": "USA Sectors", "bb": "XHB US EQUITY", "co": "Homebuilders"},
-  "XPH": {"disp": "XPH", "source": "stocks.load", "symbol": "XPH", "cat": "USA Sectors", "bb": "XPH US EQUITY", "co": "Pharmaceuticals"},
-  "XHE": {"disp": "XHE", "source": "stocks.load", "symbol": "XHE", "cat": "USA Sectors", "bb": "XHE US EQUITY", "co": "Healthcare Equipment"},
-  "GNR": {"disp": "GNR", "source": "stocks.load", "symbol": "GNR", "cat": "USA Sectors", "bb": "GNR US EQUITY", "co": "Natural Resources"},
-  "XRT": {"disp": "XRT", "source": "stocks.load", "symbol": "XRT", "cat": "USA Sectors", "bb": "XRT US EQUITY", "co": "Retail"},
-  "XAR": {"disp": "XAR", "source": "stocks.load", "symbol": "XAR", "cat": "USA Sectors", "bb": "XAR US EQUITY", "co": "Aerospace & Defence"},
-  "XME": {"disp": "XME", "source": "stocks.load", "symbol": "XME", "cat": "USA Sectors", "bb": "XME US EQUITY", "co": "Metal & Mining"},
-  "XSD": {"disp": "XSD", "source": "stocks.load", "symbol": "XSD", "cat": "USA Sectors", "bb": "XSD US EQUITY", "co": "Semiconductor"},
-  "GXC": {"disp": "GXC", "source": "stocks.load", "symbol": "GXC", "cat": "USA Sectors", "bb": "GXC US EQUITY", "co": "China"},
-  "KIE": {"disp": "KIE", "source": "stocks.load", "symbol": "KIE", "cat": "USA Sectors", "bb": "KIE US EQUITY", "co": "Insurance"},
-  "KBE": {"disp": "KBE", "source": "stocks.load", "symbol": "KBE", "cat": "USA Sectors", "bb": "KBE US EQUITY", "co": "US Banks"},
-  "XHS": {"disp": "XHS", "source": "stocks.load", "symbol": "XHS", "cat": "USA Sectors", "bb": "XHS US EQUITY", "co": "Healthcare Services"},
-  "KRE": {"disp": "KRE", "source": "stocks.load", "symbol": "KRE", "cat": "USA Sectors", "bb": "KRE US EQUITY", "co": "Regional Banks"},
-  "XTL": {"disp": "XTL", "source": "stocks.load", "symbol": "XTL", "cat": "USA Sectors", "bb": "XTL US EQUITY", "co": "Telecom"},
-  "XTN": {"disp": "XTN", "source": "stocks.load", "symbol": "XTN", "cat": "USA Sectors", "bb": "XTN US EQUITY", "co": "Transportation"},
-  "XSW": {"disp": "XSW", "source": "stocks.load", "symbol": "XSW", "cat": "USA Sectors", "bb": "XSW US EQUITY", "co": "Software & Services"},
-  "XOP": {"disp": "XOP", "source": "stocks.load", "symbol": "XOP", "cat": "USA Sectors", "bb": "XOP US EQUITY", "co": "Oil Production"},
-  "XES": {"disp": "XES", "source": "stocks.load", "symbol": "XES", "cat": "USA Sectors", "bb": "XES US EQUITY", "co": "Oil Services"},
-  "RSPU": {"disp": "RSPU", "source": "stocks.load", "symbol": "RSPU", "cat": "Equal Weight Sectors", "bb": "RSPU US EQUITY", "co": "Utilities"},
-  "RSPS": {"disp": "RSPS", "source": "stocks.load", "symbol": "RSPS", "cat": "Equal Weight Sectors", "bb": "RSPS US EQUITY", "co": "Consumer Staples"},
-  "RSPH": {"disp": "RSPH", "source": "stocks.load", "symbol": "RSPH", "cat": "Equal Weight Sectors", "bb": "RSPH US EQUITY", "co": "Health-Care Services"},
-  "RSPR": {"disp": "RSPR", "source": "stocks.load", "symbol": "RSPR", "cat": "Equal Weight Sectors", "bb": "RSPR US EQUITY", "co": "Retail"},
-  "RSPD": {"disp": "RSPD", "source": "stocks.load", "symbol": "RSPD", "cat": "Equal Weight Sectors", "bb": "RSPD US EQUITY", "co": "Consumer Discretionary"},
-  "RSPC": {"disp": "RSPC", "source": "stocks.load", "symbol": "RSPC", "cat": "Equal Weight Sectors", "bb": "RSPC US EQUITY", "co": "Aerospace & Defence"},
-  "RSP": {"disp": "RSP", "source": "stocks.load", "symbol": "RSP", "cat": "Equal Weight Sectors", "bb": "RSP US EQUITY", "co": "S&P 500 Equal-Weight"},
-  "RSPN": {"disp": "RSPN", "source": "stocks.load", "symbol": "RSPN", "cat": "Equal Weight Sectors", "bb": "RSPN US EQUITY", "co": "Industrials"},
-  "RSPF": {"disp": "RSPF", "source": "stocks.load", "symbol": "RSPF", "cat": "Equal Weight Sectors", "bb": "RSPF US EQUITY", "co": "Financials"},
-  "RSPT": {"disp": "RSPT", "source": "stocks.load", "symbol": "RSPT", "cat": "Equal Weight Sectors", "bb": "RSPT US EQUITY", "co": "Technology"},
-  "RSPM": {"disp": "RSPM", "source": "stocks.load", "symbol": "RSPM", "cat": "Equal Weight Sectors", "bb": "RSPM US EQUITY", "co": "Materials"},
-  "RSPG": {"disp": "RSPG", "source": "stocks.load", "symbol": "RSPG", "cat": "Equal Weight Sectors", "bb": "RSPG US EQUITY", "co": "Growth"}
+  "XJO": {
+    "disp": "XJO",
+    "source": "stocks.load",
+    "symbol": "^AXJO",
+    "cat": "Global Markets",
+    "bb": "XJO Index",
+    "co": "S&P/ASX 200"
+  },
+  "HSI": {
+    "disp": "HSI",
+    "source": "stocks.load",
+    "symbol": "^HSI",
+    "cat": "Global Markets",
+    "bb": "HSI Index",
+    "co": "Hang Seng"
+  },
+  "DJI": {
+    "disp": "DJI",
+    "source": "stocks.load",
+    "symbol": "^DJI",
+    "cat": "Global Markets",
+    "bb": "DJI Index",
+    "co": "Dow Jones Industrial Avg"
+  },
+  "SPX": {
+    "disp": "SPX",
+    "source": "stocks.load",
+    "symbol": "^GSPC",
+    "cat": "Global Markets",
+    "bb": "SPX Index",
+    "co": "S&P 500"
+  },
+  "NDX": {
+    "disp": "NDX",
+    "source": "stocks.load",
+    "symbol": "^NDX",
+    "cat": "Global Markets",
+    "bb": "NDX Index",
+    "co": "Nasdaq 100"
+  },
+  "RUT": {
+    "disp": "RUT",
+    "source": "stocks.load",
+    "symbol": "^RUT",
+    "cat": "Global Markets",
+    "bb": "RUT Index",
+    "co": "Russell 2000"
+  },
+  "AS30": {
+    "disp": "AS30",
+    "source": "stocks.load",
+    "symbol": "^AORD",
+    "cat": "Global Markets",
+    "bb": "AS30 Index",
+    "co": "ALL ORDINARIES INDX"
+  },
+  "SHSZ300": {
+    "disp": "SHSZ300",
+    "source": "stocks.load",
+    "symbol": "000300.SS",
+    "cat": "Global Markets",
+    "bb": "SHSZ300 Index",
+    "co": "China 300"
+  },
+  "NKY": {
+    "disp": "NKY",
+    "source": "stocks.load",
+    "symbol": "^N225",
+    "cat": "Global Markets",
+    "bb": "NKY Index",
+    "co": "Nikkei"
+  },
+  "BTCQ5": {
+    "disp": "BTCQ5",
+    "source": "crypto.load",
+    "symbol": "BTC-USD",
+    "cat": "Global Markets",
+    "bb": "BTCA Curncy",
+    "co": "Bitcoin"
+  },
+  "SX5E": {
+    "disp": "SX5E",
+    "source": "stocks.load",
+    "symbol": "^STOXX50E",
+    "cat": "Global Markets",
+    "bb": "SX5E Index",
+    "co": "Euro Stoxx"
+  },
+  "UX1": {
+    "disp": "UX1",
+    "source": "stocks.load",
+    "symbol": "^VIX",
+    "cat": "Global Markets",
+    "bb": "UX1 Index",
+    "co": "VIX"
+  },
+  "AS38": {
+    "disp": "AS38",
+    "source": "stocks.load",
+    "symbol": "^AXSO",
+    "cat": "ASX Indices",
+    "bb": "AS38 Index",
+    "co": "ASX Small Ords"
+  },
+  "AS40": {
+    "disp": "AS40",
+    "source": "stocks.load",
+    "symbol": "^AXVI",
+    "cat": "ASX Indices",
+    "bb": "AS40 Index",
+    "co": "ASX Small Industrials"
+  },
+  "AS39": {
+    "disp": "AS39",
+    "source": "stocks.load",
+    "symbol": "^AXSR",
+    "cat": "ASX Indices",
+    "bb": "AS39 Index",
+    "co": "ASX Small Resources"
+  },
+  "AS34": {
+    "disp": "AS34",
+    "source": "stocks.load",
+    "symbol": "^AXMD",
+    "cat": "ASX Indices",
+    "bb": "AS34 Index",
+    "co": "ASX Mid Cap"
+  },
+  "AS52MATL": {
+    "disp": "AS52MATL",
+    "source": "stocks.load",
+    "symbol": "^AXMJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52MATL Index",
+    "co": "Materials"
+  },
+  "AS52FIN": {
+    "disp": "AS52FIN",
+    "source": "stocks.load",
+    "symbol": "^AXFJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52FIN Index",
+    "co": "Financials"
+  },
+  "AS52HC": {
+    "disp": "AS52HC",
+    "source": "stocks.load",
+    "symbol": "^AXHJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52HC Index",
+    "co": "Healthcare"
+  },
+  "AS52INDU": {
+    "disp": "AS52INDU",
+    "source": "stocks.load",
+    "symbol": "^AXNJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52INDU Index",
+    "co": "Industrials"
+  },
+  "AS52COND": {
+    "disp": "AS52COND",
+    "source": "stocks.load",
+    "symbol": "^AXDJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52COND Index",
+    "co": "Consumer Discretionary"
+  },
+  "AS52REAL": {
+    "disp": "AS52REAL",
+    "source": "stocks.load",
+    "symbol": "^AXPJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52REAL Index",
+    "co": "Real Estate"
+  },
+  "AS52ENGY": {
+    "disp": "AS52ENGY",
+    "source": "stocks.load",
+    "symbol": "^AXEJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52ENGY Index",
+    "co": "Energy"
+  },
+  "AS52TELE": {
+    "disp": "AS52TELE",
+    "source": "stocks.load",
+    "symbol": "^AXTJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52TELE Index",
+    "co": "Communication Services"
+  },
+  "AS52CONS": {
+    "disp": "AS52CONS",
+    "source": "stocks.load",
+    "symbol": "^AXSJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52CONS Index",
+    "co": "Consumer Staples"
+  },
+  "AS52IT": {
+    "disp": "AS52IT",
+    "source": "stocks.load",
+    "symbol": "^AXIJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52IT Index",
+    "co": "Technology"
+  },
+  "AS52UTIL": {
+    "disp": "AS52UTIL",
+    "source": "stocks.load",
+    "symbol": "^AXUJ",
+    "cat": "ASX Sectors",
+    "bb": "AS52UTIL Index",
+    "co": "Utilities"
+  },
+  "CL1": {
+    "disp": "CL1",
+    "source": "stocks.load",
+    "symbol": "CL=F",
+    "cat": "Commodities",
+    "bb": "CL1 Comdty",
+    "co": "Crude Oil"
+  },
+  "UXA1": {
+    "disp": "UXA1",
+    "source": "stocks.load",
+    "symbol": "URA",
+    "cat": "Commodities",
+    "bb": "UXA1 Comdty",
+    "co": "Uranium"
+  },
+  "XAU": {
+    "disp": "XAU",
+    "source": "stocks.load",
+    "symbol": "GC=F",
+    "cat": "Commodities",
+    "bb": "XAU Curncy",
+    "co": "Gold"
+  },
+  "SCO1": {
+    "disp": "SCO1",
+    "source": "stocks.load",
+    "symbol": "DBC",
+    "cat": "Commodities",
+    "bb": "SCO1 COMB Comdty",
+    "co": "Commodity Basket"
+  },
+  "IACQ5": {
+    "disp": "IACQ5",
+    "source": "stocks.load",
+    "symbol": "^COAL",
+    "cat": "Commodities",
+    "bb": "IACA Comdty",
+    "co": "Coking Coal"
+  },
+  "XWU5": {
+    "disp": "XWU5",
+    "source": "stocks.load",
+    "symbol": "^COAL",
+    "cat": "Commodities",
+    "bb": "XWA Comdty",
+    "co": "Newcastle Coal"
+  },
+  "LMCADY": {
+    "disp": "LMCADY",
+    "source": "stocks.load",
+    "symbol": "CPER",
+    "cat": "Commodities",
+    "bb": "LMCADY Comdty",
+    "co": "Copper"
+  },
+  "LMNIDY": {
+    "disp": "LMNIDY",
+    "source": "stocks.load",
+    "symbol": "JJN",
+    "cat": "Commodities",
+    "bb": "LMNIDY Comdty",
+    "co": "Nickel"
+  },
+  "LIT": {
+    "disp": "LIT",
+    "source": "stocks.load",
+    "symbol": "LIT",
+    "cat": "Commodities",
+    "bb": "LIT US EQUITY",
+    "co": "Lithium ETF"
+  },
+  "AUDJPY": {
+    "disp": "AUDJPY",
+    "source": "stocks.load",
+    "symbol": "AUDJPY=X",
+    "cat": "Forex",
+    "bb": "AUDJPY Curncy",
+    "co": "AUD JPY"
+  },
+  "AUDUSD": {
+    "disp": "AUDUSD",
+    "source": "stocks.load",
+    "symbol": "AUDUSD=X",
+    "cat": "Forex",
+    "bb": "AUDUSD Curncy",
+    "co": "AUD USD"
+  },
+  "USDJPY": {
+    "disp": "USDJPY",
+    "source": "stocks.load",
+    "symbol": "USDJPY=X",
+    "cat": "Forex",
+    "bb": "USDJPY Curncy",
+    "co": "USD JPY"
+  },
+  "DXY": {
+    "disp": "DXY",
+    "source": "stocks.load",
+    "symbol": "DX-Y.NYB",
+    "cat": "Forex",
+    "bb": "DXY Curncy",
+    "co": "US Dollar"
+  },
+  "USGG30YR": {
+    "disp": "USGG30YR",
+    "source": "stocks.load",
+    "symbol": "^TYX",
+    "cat": "Forex",
+    "bb": "USGG30YR index",
+    "co": "US 30 Yr Yield"
+  },
+  "PBJ": {
+    "disp": "PBJ",
+    "source": "stocks.load",
+    "symbol": "PBJ",
+    "cat": "Thematics",
+    "bb": "PBJ US EQUITY",
+    "co": "Food & Beverage"
+  },
+  "BOAT": {
+    "disp": "BOAT",
+    "source": "stocks.load",
+    "symbol": "BOAT",
+    "cat": "Thematics",
+    "bb": "BOAT US EQUITY",
+    "co": "Global Shipping"
+  },
+  "MOO": {
+    "disp": "MOO",
+    "source": "stocks.load",
+    "symbol": "MOO",
+    "cat": "Thematics",
+    "bb": "MOO US EQUITY",
+    "co": "Agribusiness"
+  },
+  "COPX": {
+    "disp": "COPX",
+    "source": "stocks.load",
+    "symbol": "COPX",
+    "cat": "Thematics",
+    "bb": "COPX US EQUITY",
+    "co": "Copper Miners"
+  },
+  "ROBO": {
+    "disp": "ROBO",
+    "source": "stocks.load",
+    "symbol": "ROBO",
+    "cat": "Thematics",
+    "bb": "ROBO US EQUITY",
+    "co": "Robotics & Automation"
+  },
+  "BOTZ": {
+    "disp": "BOTZ",
+    "source": "stocks.load",
+    "symbol": "BOTZ",
+    "cat": "Thematics",
+    "bb": "BOTZ US EQUITY",
+    "co": "Robots & AI"
+  },
+  "SPYV": {
+    "disp": "SPYV",
+    "source": "stocks.load",
+    "symbol": "SPYV",
+    "cat": "Thematics",
+    "bb": "SPYV US EQUITY",
+    "co": "S&P 500 Value"
+  },
+  "PEJ": {
+    "disp": "PEJ",
+    "source": "stocks.load",
+    "symbol": "PEJ",
+    "cat": "Thematics",
+    "bb": "PEJ US EQUITY",
+    "co": "Entertainment"
+  },
+  "DRIV": {
+    "disp": "DRIV",
+    "source": "stocks.load",
+    "symbol": "DRIV",
+    "cat": "Thematics",
+    "bb": "DRIV US EQUITY",
+    "co": "Automation & EV"
+  },
+  "PAVE": {
+    "disp": "PAVE",
+    "source": "stocks.load",
+    "symbol": "PAVE",
+    "cat": "Thematics",
+    "bb": "PAVE US EQUITY",
+    "co": "Global Infrastructure"
+  },
+  "QQQE": {
+    "disp": "QQQE",
+    "source": "stocks.load",
+    "symbol": "QQQE",
+    "cat": "Thematics",
+    "bb": "QQQE US EQUITY",
+    "co": "QQQ Equal-Weight"
+  },
+  "SLX": {
+    "disp": "SLX",
+    "source": "stocks.load",
+    "symbol": "SLX",
+    "cat": "Thematics",
+    "bb": "SLX US EQUITY",
+    "co": "Steel"
+  },
+  "CIBR": {
+    "disp": "CIBR",
+    "source": "stocks.load",
+    "symbol": "CIBR",
+    "cat": "Thematics",
+    "bb": "CIBR US EQUITY",
+    "co": "Cyber Security"
+  },
+  "FXI": {
+    "disp": "FXI",
+    "source": "stocks.load",
+    "symbol": "FXI",
+    "cat": "Thematics",
+    "bb": "FXI US EQUITY",
+    "co": "China Large-Cap"
+  },
+  "SPYG": {
+    "disp": "SPYG",
+    "source": "stocks.load",
+    "symbol": "SPYG",
+    "cat": "Thematics",
+    "bb": "SPYG US EQUITY",
+    "co": "S&P 500 Growth"
+  },
+  "IBUY": {
+    "disp": "IBUY",
+    "source": "stocks.load",
+    "symbol": "IBUY",
+    "cat": "Thematics",
+    "bb": "IBUY US EQUITY",
+    "co": "Online Retail"
+  },
+  "PBW": {
+    "disp": "PBW",
+    "source": "stocks.load",
+    "symbol": "PBW",
+    "cat": "Thematics",
+    "bb": "PBW US EQUITY",
+    "co": "Clean Energy"
+  },
+  "USO": {
+    "disp": "USO",
+    "source": "stocks.load",
+    "symbol": "USO",
+    "cat": "Thematics",
+    "bb": "USO US EQUITY",
+    "co": "United States Oil"
+  },
+  "WCLD": {
+    "disp": "WCLD",
+    "source": "stocks.load",
+    "symbol": "WCLD",
+    "cat": "Thematics",
+    "bb": "WCLD US EQUITY",
+    "co": "Cloud Computing"
+  },
+  "IPAY": {
+    "disp": "IPAY",
+    "source": "stocks.load",
+    "symbol": "IPAY",
+    "cat": "Thematics",
+    "bb": "IPAY US EQUITY",
+    "co": "Mobile Payment"
+  },
+  "GBTC": {
+    "disp": "GBTC",
+    "source": "stocks.load",
+    "symbol": "GBTC",
+    "cat": "Thematics",
+    "bb": "GBTC US EQUITY",
+    "co": "Bitcoin Trust"
+  },
+  "BUZZ": {
+    "disp": "BUZZ",
+    "source": "stocks.load",
+    "symbol": "BUZZ",
+    "cat": "Thematics",
+    "bb": "BUZZ US EQUITY",
+    "co": "Social Sentiment"
+  },
+  "FCG": {
+    "disp": "FCG",
+    "source": "stocks.load",
+    "symbol": "FCG",
+    "cat": "Thematics",
+    "bb": "FCG US EQUITY",
+    "co": "Natural Gas"
+  },
+  "FFTY": {
+    "disp": "FFTY",
+    "source": "stocks.load",
+    "symbol": "FFTY",
+    "cat": "Thematics",
+    "bb": "FFTY US EQUITY",
+    "co": "IBD 50"
+  },
+  "JETS": {
+    "disp": "JETS",
+    "source": "stocks.load",
+    "symbol": "JETS",
+    "cat": "Thematics",
+    "bb": "JETS US EQUITY",
+    "co": "Airlines"
+  },
+  "BLOK": {
+    "disp": "BLOK",
+    "source": "stocks.load",
+    "symbol": "BLOK",
+    "cat": "Thematics",
+    "bb": "BLOK US EQUITY",
+    "co": "Crypto Related"
+  },
+  "XHB": {
+    "disp": "XHB",
+    "source": "stocks.load",
+    "symbol": "XHB",
+    "cat": "USA Sectors",
+    "bb": "XHB US EQUITY",
+    "co": "Homebuilders"
+  },
+  "XPH": {
+    "disp": "XPH",
+    "source": "stocks.load",
+    "symbol": "XPH",
+    "cat": "USA Sectors",
+    "bb": "XPH US EQUITY",
+    "co": "Pharmaceuticals"
+  },
+  "XHE": {
+    "disp": "XHE",
+    "source": "stocks.load",
+    "symbol": "XHE",
+    "cat": "USA Sectors",
+    "bb": "XHE US EQUITY",
+    "co": "Healthcare Equipment"
+  },
+  "GNR": {
+    "disp": "GNR",
+    "source": "stocks.load",
+    "symbol": "GNR",
+    "cat": "USA Sectors",
+    "bb": "GNR US EQUITY",
+    "co": "Natural Resources"
+  },
+  "XRT": {
+    "disp": "XRT",
+    "source": "stocks.load",
+    "symbol": "XRT",
+    "cat": "USA Sectors",
+    "bb": "XRT US EQUITY",
+    "co": "Retail"
+  },
+  "XAR": {
+    "disp": "XAR",
+    "source": "stocks.load",
+    "symbol": "XAR",
+    "cat": "USA Sectors",
+    "bb": "XAR US EQUITY",
+    "co": "Aerospace & Defence"
+  },
+  "XME": {
+    "disp": "XME",
+    "source": "stocks.load",
+    "symbol": "XME",
+    "cat": "USA Sectors",
+    "bb": "XME US EQUITY",
+    "co": "Metal & Mining"
+  },
+  "XSD": {
+    "disp": "XSD",
+    "source": "stocks.load",
+    "symbol": "XSD",
+    "cat": "USA Sectors",
+    "bb": "XSD US EQUITY",
+    "co": "Semiconductor"
+  },
+  "GXC": {
+    "disp": "GXC",
+    "source": "stocks.load",
+    "symbol": "GXC",
+    "cat": "USA Sectors",
+    "bb": "GXC US EQUITY",
+    "co": "China"
+  },
+  "KIE": {
+    "disp": "KIE",
+    "source": "stocks.load",
+    "symbol": "KIE",
+    "cat": "USA Sectors",
+    "bb": "KIE US EQUITY",
+    "co": "Insurance"
+  },
+  "KBE": {
+    "disp": "KBE",
+    "source": "stocks.load",
+    "symbol": "KBE",
+    "cat": "USA Sectors",
+    "bb": "KBE US EQUITY",
+    "co": "US Banks"
+  },
+  "XHS": {
+    "disp": "XHS",
+    "source": "stocks.load",
+    "symbol": "XHS",
+    "cat": "USA Sectors",
+    "bb": "XHS US EQUITY",
+    "co": "Healthcare Services"
+  },
+  "KRE": {
+    "disp": "KRE",
+    "source": "stocks.load",
+    "symbol": "KRE",
+    "cat": "USA Sectors",
+    "bb": "KRE US EQUITY",
+    "co": "Regional Banks"
+  },
+  "XTL": {
+    "disp": "XTL",
+    "source": "stocks.load",
+    "symbol": "XTL",
+    "cat": "USA Sectors",
+    "bb": "XTL US EQUITY",
+    "co": "Telecom"
+  },
+  "XTN": {
+    "disp": "XTN",
+    "source": "stocks.load",
+    "symbol": "XTN",
+    "cat": "USA Sectors",
+    "bb": "XTN US EQUITY",
+    "co": "Transportation"
+  },
+  "XSW": {
+    "disp": "XSW",
+    "source": "stocks.load",
+    "symbol": "XSW",
+    "cat": "USA Sectors",
+    "bb": "XSW US EQUITY",
+    "co": "Software & Services"
+  },
+  "XOP": {
+    "disp": "XOP",
+    "source": "stocks.load",
+    "symbol": "XOP",
+    "cat": "USA Sectors",
+    "bb": "XOP US EQUITY",
+    "co": "Oil Production"
+  },
+  "XES": {
+    "disp": "XES",
+    "source": "stocks.load",
+    "symbol": "XES",
+    "cat": "USA Sectors",
+    "bb": "XES US EQUITY",
+    "co": "Oil Services"
+  },
+  "RSPU": {
+    "disp": "RSPU",
+    "source": "stocks.load",
+    "symbol": "RSPU",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPU US EQUITY",
+    "co": "Utilities"
+  },
+  "RSPS": {
+    "disp": "RSPS",
+    "source": "stocks.load",
+    "symbol": "RSPS",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPS US EQUITY",
+    "co": "Consumer Staples"
+  },
+  "RSPH": {
+    "disp": "RSPH",
+    "source": "stocks.load",
+    "symbol": "RSPH",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPH US EQUITY",
+    "co": "Health-Care Services"
+  },
+  "RSPR": {
+    "disp": "RSPR",
+    "source": "stocks.load",
+    "symbol": "RSPR",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPR US EQUITY",
+    "co": "Retail"
+  },
+  "RSPD": {
+    "disp": "RSPD",
+    "source": "stocks.load",
+    "symbol": "RSPD",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPD US EQUITY",
+    "co": "Consumer Discretionary"
+  },
+  "RSPC": {
+    "disp": "RSPC",
+    "source": "stocks.load",
+    "symbol": "RSPC",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPC US EQUITY",
+    "co": "Aerospace & Defence"
+  },
+  "RSP": {
+    "disp": "RSP",
+    "source": "stocks.load",
+    "symbol": "RSP",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSP US EQUITY",
+    "co": "S&P 500 Equal-Weight"
+  },
+  "RSPN": {
+    "disp": "RSPN",
+    "source": "stocks.load",
+    "symbol": "RSPN",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPN US EQUITY",
+    "co": "Industrials"
+  },
+  "RSPF": {
+    "disp": "RSPF",
+    "source": "stocks.load",
+    "symbol": "RSPF",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPF US EQUITY",
+    "co": "Financials"
+  },
+  "RSPT": {
+    "disp": "RSPT",
+    "source": "stocks.load",
+    "symbol": "RSPT",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPT US EQUITY",
+    "co": "Technology"
+  },
+  "RSPM": {
+    "disp": "RSPM",
+    "source": "stocks.load",
+    "symbol": "RSPM",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPM US EQUITY",
+    "co": "Materials"
+  },
+  "RSPG": {
+    "disp": "RSPG",
+    "source": "stocks.load",
+    "symbol": "RSPG",
+    "cat": "Equal Weight Sectors",
+    "bb": "RSPG US EQUITY",
+    "co": "Growth"
+  }
 }

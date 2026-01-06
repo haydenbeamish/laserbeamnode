@@ -83,7 +83,7 @@ PostgreSQL database with simplified schema:
 
 ## Markets Endpoint Details (/api/markets)
 Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories:
-- Global Markets, ASX Indices, ASX Sectors, Commodities, Forex, Bonds, USA Sectors, Equal Weight Sectors, Thematics
+- Global Markets, ASX Indices, ASX Sectors, Commodities, Forex, USA Sectors, Equal Weight Sectors, Thematics
 
 **Response format:**
 ```json
