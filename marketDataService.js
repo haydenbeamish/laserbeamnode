@@ -200,11 +200,16 @@ ${formatTickers(commodities)}
 Write in a professional, factual tone. No bullet points. Maximum 4 sentences.`;
 
     console.log('[markets] Generating AI summary...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     const response = await openai.chat.completions.create({
       model: 'gpt-5.2-chat-latest',
       messages: [{ role: 'user', content: prompt }],
       max_completion_tokens: 250
-    });
+    }, { signal: controller.signal });
+    
+    clearTimeout(timeoutId);
     
     const summary = response.choices[0]?.message?.content?.trim() || null;
     console.log('[markets] AI summary generated');

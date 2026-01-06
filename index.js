@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 const fetch = require("node-fetch");
 const path = require("path");
 const { Pool, neonConfig } = require("@neondatabase/serverless");
@@ -17,7 +18,7 @@ app.use(cors({
       'http://localhost:5000',
       'http://127.0.0.1:5000'
     ];
-    if (!origin || allowedOrigins.includes(origin) || /\.replit\.dev$/.test(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || /\.replit\.dev$/.test(origin) || /\.repl\.co$/.test(origin)) {
       callback(null, true);
     } else {
       callback(null, false);
@@ -26,6 +27,18 @@ app.use(cors({
   methods: ['GET', 'POST', 'OPTIONS'],
   credentials: true
 }));
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 100,
+  message: { error: true, message: "Too many requests, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use('/api/', apiLimiter);
+app.use('/posts', apiLimiter);
+app.use('/selectedpost', apiLimiter);
+
 app.use(express.json());
 app.use(express.static("public"));
 
@@ -344,7 +357,7 @@ app.get("/api/performance", async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching performance:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ error: true, message: "Failed to load performance data" });
   }
 });
 
@@ -363,7 +376,7 @@ app.get("/posts", async (req, res) => {
     ]);
 
     if (!webResponse.ok || !bothResponse.ok) {
-      return res.status(500).json({ message: "Beehiiv API error" });
+      return res.status(500).json({ error: true, message: "Failed to load posts" });
     }
 
     const webData = await webResponse.json();
@@ -375,7 +388,7 @@ app.get("/posts", async (req, res) => {
     res.json({ data: allPosts });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ error: true, message: "Failed to load posts" });
   }
 });
 
@@ -395,7 +408,8 @@ app.get("/selectedpost/:id", async (req, res) => {
     const body = await response.json();
     res.json(body);
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Error fetching post:", err);
+    res.status(500).json({ error: true, message: "Failed to load post" });
   }
 });
 
@@ -405,7 +419,7 @@ app.get("/api/markets", async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error("[/api/markets] Error:", err.message);
-    res.status(500).json({ error: "Failed to fetch market data" });
+    res.status(500).json({ error: true, message: "Failed to load market data" });
   }
 });
 
