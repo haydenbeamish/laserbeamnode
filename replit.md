@@ -118,7 +118,7 @@ Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories
 - Service logic in `marketDataService.js`
 
 ## Recent Changes (Jan 2026)
-- **NEW**: AI Analyst Summary - GPT-4o-mini generates market commentary on each refresh
+- **NEW**: AI Analyst Summary - GPT-5.2 generates market commentary on each refresh
 - **NEW**: Added /api/markets endpoint for live market data from Yahoo Finance
 - **NEW**: Added marketDataService.js for ticker fetching, calculations, and caching
 
