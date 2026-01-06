@@ -201,7 +201,7 @@ function triggerBackgroundRefresh() {
   }
 }
 
-const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 20 * 60 * 1000;
 
 async function runScheduledRefresh() {
   console.log('[markets] Running scheduled refresh...');
@@ -215,7 +215,7 @@ async function runScheduledRefresh() {
 
 runScheduledRefresh();
 setInterval(runScheduledRefresh, REFRESH_INTERVAL_MS);
-console.log('[markets] Scheduled to refresh every hour');
+console.log('[markets] Scheduled to refresh every 20 minutes');
 
 module.exports = {
   getMarketData,
