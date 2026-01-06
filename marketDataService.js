@@ -1,7 +1,9 @@
 const YahooFinance = require('yahoo-finance2').default;
 const pLimit = require('p-limit').default;
+const OpenAI = require('openai');
 
 const yahooFinance = new YahooFinance();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const fs = require('fs');
 const path = require('path');
 
@@ -24,7 +26,8 @@ const CATEGORY_ORDER = {
 let cache = {
   markets: [],
   updatedAt: null,
-  fetchedAt: null
+  fetchedAt: null,
+  aiSummary: null
 };
 
 let refreshPromise = null;
@@ -155,6 +158,64 @@ async function fetchAllMarketData() {
   return validResults;
 }
 
+async function generateAISummary(markets) {
+  if (!process.env.OPENAI_API_KEY) {
+    console.log('[markets] No OpenAI API key, skipping AI summary');
+    return null;
+  }
+  
+  try {
+    const globalMarkets = markets.filter(m => m.category === 'Global Markets');
+    const usaSectors = markets.filter(m => m.category === 'USA Sectors');
+    const asxSectors = markets.filter(m => m.category === 'ASX Sectors');
+    const equalWeight = markets.filter(m => m.category === 'USA Equal Weight Sectors');
+    const thematics = markets.filter(m => m.category === 'USA Thematics');
+    const commodities = markets.filter(m => m.category === 'Commodities');
+    
+    const formatTickers = (arr) => arr.map(t => `${t.name}: ${t.chgDay > 0 ? '+' : ''}${t.chgDay}% (1D), ${t.chgMonth > 0 ? '+' : ''}${t.chgMonth}% (1M)`).join('\n');
+    
+    const prompt = `You are a professional market analyst. Provide a concise 3-4 sentence summary of today's market movements based on this data. Focus on:
+1. Global index changes and any notable outliers
+2. Trend reversals or significant momentum shifts
+3. Key sector and thematic themes
+
+GLOBAL MARKETS:
+${formatTickers(globalMarkets)}
+
+USA SECTORS:
+${formatTickers(usaSectors.slice(0, 10))}
+
+ASX SECTORS:
+${formatTickers(asxSectors)}
+
+USA EQUAL WEIGHT SECTORS:
+${formatTickers(equalWeight)}
+
+USA THEMATICS (Top movers):
+${formatTickers(thematics.slice(0, 10))}
+
+COMMODITIES:
+${formatTickers(commodities)}
+
+Write in a professional, factual tone. No bullet points. Maximum 4 sentences.`;
+
+    console.log('[markets] Generating AI summary...');
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 250,
+      temperature: 0.7
+    });
+    
+    const summary = response.choices[0]?.message?.content?.trim() || null;
+    console.log('[markets] AI summary generated');
+    return summary;
+  } catch (error) {
+    console.error('[markets] AI summary failed:', error.message);
+    return null;
+  }
+}
+
 async function refreshCache() {
   if (refreshPromise) {
     return refreshPromise;
@@ -163,10 +224,12 @@ async function refreshCache() {
   refreshPromise = (async () => {
     try {
       const markets = await fetchAllMarketData();
+      const aiSummary = await generateAISummary(markets);
       cache = {
         markets,
         updatedAt: new Date().toISOString(),
-        fetchedAt: Date.now()
+        fetchedAt: Date.now(),
+        aiSummary: aiSummary || cache.aiSummary
       };
       return cache;
     } finally {
@@ -185,7 +248,8 @@ function isCacheValid() {
 async function getMarketData() {
   return {
     markets: cache.markets,
-    updatedAt: cache.updatedAt
+    updatedAt: cache.updatedAt,
+    aiSummary: cache.aiSummary
   };
 }
 
