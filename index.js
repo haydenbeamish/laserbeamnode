@@ -382,7 +382,10 @@ app.get("/selectedpost/:id", async (req, res) => {
 app.get("/api/markets", async (req, res) => {
   try {
     const data = await marketDataService.getMarketData();
-    res.json(data);
+    res.json({
+      ...data,
+      aiSummary: null
+    });
   } catch (err) {
     console.error("[/api/markets] Error:", err.message);
     res.status(500).json({ error: "Failed to fetch market data" });
