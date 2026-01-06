@@ -348,7 +348,7 @@ app.get("/api/performance", async (req, res) => {
 app.get("/posts", async (req, res) => {
   try {
     const expandParams = ["free_web_content"].map((e) => `expand[]=${e}`).join("&");
-    const url = `https://api.beehiiv.com/v2/publications/pub_ca643944-2ed9-48dc-8eff-711fc225e133/posts?${expandParams}&audience=all&platform=all&status=confirmed&limit=50&page=1&order_by=publish_date&direction=desc`;
+    const url = `https://api.beehiiv.com/v2/publications/pub_ca643944-2ed9-48dc-8eff-711fc225e133/posts?${expandParams}&audience=all&platform=both&status=confirmed&limit=50&page=1&order_by=publish_date&direction=desc`;
 
     const response = await fetch(url, {
       headers: {
