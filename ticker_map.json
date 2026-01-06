@@ -770,7 +770,7 @@
   "US10Y": {
     "disp": "US10Y",
     "source": "stocks.load",
-    "symbol": "ZN=F",
+    "symbol": "^TNX",
     "cat": "Forex",
     "bb": "USGG10YR Index",
     "co": "USA 10 Yr Yield"
