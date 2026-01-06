@@ -124,6 +124,10 @@ Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories
   - ASX after close: 4:10 PM AEST (after first data refresh)
 - **NEW**: Added /api/markets endpoint for live market data from Yahoo Finance
 - **NEW**: Added marketDataService.js for ticker fetching, calculations, and caching
+- **IMPROVED**: Rate limiting (100 requests/min) on public API endpoints
+- **IMPROVED**: Standardized error responses to { error: true, message: "..." } format
+- **IMPROVED**: 30-second timeout on OpenAI API calls
+- **IMPROVED**: CORS now allows *.replit.dev and *.repl.co preview domains
 
 ## Recent Changes (Dec 2025)
 - **NEW**: Redesigned admin panel with NAV/MGWD input and auto-calculated metrics
