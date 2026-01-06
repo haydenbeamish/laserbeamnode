@@ -19,7 +19,9 @@
     "drizzle-orm": "^0.44.7",
     "express": "^5.1.0",
     "node-fetch": "^2.7.0",
+    "p-limit": "^7.2.0",
     "read-excel-file": "^5.4.0",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "yahoo-finance2": "^3.11.2"
   }
 }

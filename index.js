@@ -4,11 +4,15 @@ const fetch = require("node-fetch");
 const path = require("path");
 const { Pool, neonConfig } = require("@neondatabase/serverless");
 const ws = require("ws");
+const marketDataService = require("./marketDataService");
 
 neonConfig.webSocketConstructor = ws;
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ['https://www.laserbeamcapital.com', 'https://laserbeamcapital.com', /\.replit\.dev$/],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static("public"));
 
@@ -372,6 +376,16 @@ app.get("/selectedpost/:id", async (req, res) => {
     res.json(body);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/api/markets", async (req, res) => {
+  try {
+    const data = await marketDataService.getMarketData();
+    res.json(data);
+  } catch (err) {
+    console.error("[/api/markets] Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch market data" });
   }
 });
 
