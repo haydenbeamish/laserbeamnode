@@ -26,6 +26,7 @@ PostgreSQL database with simplified schema:
 ### Public Endpoints
 - `GET /` - Welcome message
 - `GET /api/performance` - Optimized endpoint returning ALL site data with calculated metrics
+- `GET /api/markets` - Live market data for ~100 tickers from Yahoo Finance (cached 20 min)
 - `GET /posts` - Fetch posts from Beehiiv API
 - `GET /selectedpost/:id` - Fetch specific post by ID
 
@@ -79,6 +80,46 @@ PostgreSQL database with simplified schema:
 // Downside Capture: avgLBF(when MGWD<0) / avgMGWD(when MGWD<0) * 100
 // Beta: SLOPE formula (linear regression of LBF vs MGWD returns)
 ```
+
+## Markets Endpoint Details (/api/markets)
+Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories:
+- Global Markets, ASX Indices, ASX Sectors, Commodities, Forex, Bonds, USA Sectors, Equal Weight Sectors, Thematics
+
+**Response format:**
+```json
+{
+  "markets": [
+    {
+      "ticker": "SPX",
+      "name": "S&P 500",
+      "category": "Global Markets",
+      "lastPrice": 6902.05,
+      "chg1d": 0.6,
+      "chg1m": 0.8,
+      "chg1q": 2.8,
+      "chg1y": 17.4,
+      "pxVs10d": 0.2,
+      "pxVs20d": 0.6,
+      "pxVs100d": 3.1,
+      "pxVs200d": 9.6
+    }
+  ],
+  "updatedAt": "2026-01-06T03:46:53.687Z"
+}
+```
+
+**Implementation details:**
+- Uses yahoo-finance2 Node.js library with p-limit for rate limiting
+- Fetches ~400 days of historical data per ticker to calculate moving averages
+- 20-minute in-memory cache to avoid rate limits
+- Trading day lookbacks: 1d=1, 1m=21, 1q=63, 1y=252 days
+- Moving average windows: 10, 20, 100, 200 days
+- Ticker mapping stored in `ticker_map.json`
+- Service logic in `marketDataService.js`
+
+## Recent Changes (Jan 2026)
+- **NEW**: Added /api/markets endpoint for live market data from Yahoo Finance
+- **NEW**: Added marketDataService.js for ticker fetching, calculations, and caching
 
 ## Recent Changes (Dec 2025)
 - **NEW**: Redesigned admin panel with NAV/MGWD input and auto-calculated metrics

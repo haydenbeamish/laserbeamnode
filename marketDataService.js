@@ -1,5 +1,7 @@
-const yahooFinance = require('yahoo-finance2').default;
+const YahooFinance = require('yahoo-finance2').default;
 const pLimit = require('p-limit').default;
+
+const yahooFinance = new YahooFinance();
 const fs = require('fs');
 const path = require('path');
 
