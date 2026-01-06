@@ -301,23 +301,38 @@ function isAustraliaDST(date) {
   return date >= octFirstSunday || date < aprFirstSunday;
 }
 
-// Get next AI summary refresh time (after US or AU market close)
+// Get next 20-minute data refresh boundary after a given time
+function getNextDataRefreshAfter(afterTime) {
+  const ms = afterTime.getTime();
+  const intervalMs = MARKET_REFRESH_INTERVAL_MS;
+  const nextRefresh = Math.ceil(ms / intervalMs) * intervalMs;
+  return new Date(nextRefresh + 60 * 1000); // Add 1 min buffer after data refresh
+}
+
+// Get next AI summary refresh time (first data refresh after US or AU market close)
 function getNextAISummaryTime() {
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   
-  // US market close: 20:00 UTC (DST) or 21:00 UTC (standard) - add 15 min buffer
+  // US market close: 20:00 UTC (DST) or 21:00 UTC (standard)
   const usCloseHour = isUSDST(now) ? 20 : 21;
-  const usClose = new Date(today.getTime() + usCloseHour * 60 * 60 * 1000 + 15 * 60 * 1000);
+  const usClose = new Date(today.getTime() + usCloseHour * 60 * 60 * 1000);
   
-  // AU market close: 06:10 UTC (standard) or 05:10 UTC (DST) - add 15 min buffer
+  // AU market close: 06:10 UTC (standard) or 05:10 UTC (DST)
   const auCloseHour = isAustraliaDST(now) ? 5 : 6;
-  const auClose = new Date(today.getTime() + auCloseHour * 60 * 60 * 1000 + 25 * 60 * 1000);
+  const auCloseMin = 10;
+  const auClose = new Date(today.getTime() + auCloseHour * 60 * 60 * 1000 + auCloseMin * 60 * 1000);
   
-  // Find next upcoming time
-  const times = [usClose, auClose, 
-    new Date(usClose.getTime() + 24 * 60 * 60 * 1000),
-    new Date(auClose.getTime() + 24 * 60 * 60 * 1000)
+  // Get first data refresh after each market close
+  const usRefreshTime = getNextDataRefreshAfter(usClose);
+  const auRefreshTime = getNextDataRefreshAfter(auClose);
+  
+  // Find next upcoming time (include tomorrow's times)
+  const times = [
+    usRefreshTime, 
+    auRefreshTime, 
+    new Date(usRefreshTime.getTime() + 24 * 60 * 60 * 1000),
+    new Date(auRefreshTime.getTime() + 24 * 60 * 60 * 1000)
   ].filter(t => t > now).sort((a, b) => a - b);
   
   return times[0];
