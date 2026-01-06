@@ -187,15 +187,6 @@ function isCacheValid() {
 }
 
 async function getMarketData() {
-  if (isCacheValid()) {
-    return {
-      markets: cache.markets,
-      updatedAt: cache.updatedAt
-    };
-  }
-  
-  await refreshCache();
-  
   return {
     markets: cache.markets,
     updatedAt: cache.updatedAt
@@ -210,58 +201,21 @@ function triggerBackgroundRefresh() {
   }
 }
 
-const SCHEDULED_TIMES_WST = [
-  { hour: 4, minute: 30 },
-  { hour: 5, minute: 30 },
-  { hour: 6, minute: 30 },
-  { hour: 13, minute: 30 },
-  { hour: 14, minute: 30 }
-];
+const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 
-function getWSTTime() {
-  const now = new Date();
-  const utcOffset = now.getTimezoneOffset() * 60000;
-  const wstOffset = 8 * 60 * 60000;
-  return new Date(now.getTime() + utcOffset + wstOffset);
-}
-
-function getNextRefreshTime() {
-  const wstNow = getWSTTime();
-  const currentMinutes = wstNow.getHours() * 60 + wstNow.getMinutes();
-  
-  for (const time of SCHEDULED_TIMES_WST) {
-    const timeMinutes = time.hour * 60 + time.minute;
-    if (timeMinutes > currentMinutes) {
-      const msUntil = (timeMinutes - currentMinutes) * 60000;
-      return msUntil;
-    }
+async function runScheduledRefresh() {
+  console.log('[markets] Running scheduled refresh...');
+  try {
+    await refreshCache();
+    console.log('[markets] Scheduled refresh completed');
+  } catch (err) {
+    console.error('[markets] Scheduled refresh failed:', err.message);
   }
-  
-  const firstTime = SCHEDULED_TIMES_WST[0];
-  const firstTimeMinutes = firstTime.hour * 60 + firstTime.minute;
-  const msUntilTomorrow = ((24 * 60 - currentMinutes) + firstTimeMinutes) * 60000;
-  return msUntilTomorrow;
 }
 
-function scheduleNextRefresh() {
-  const msUntilNext = getNextRefreshTime();
-  const wstNow = getWSTTime();
-  const nextTime = new Date(wstNow.getTime() + msUntilNext);
-  console.log(`[markets] Next scheduled refresh at ${nextTime.toISOString()} WST (in ${Math.round(msUntilNext / 60000)} minutes)`);
-  
-  setTimeout(async () => {
-    console.log('[markets] Running scheduled refresh...');
-    try {
-      await refreshCache();
-      console.log('[markets] Scheduled refresh completed');
-    } catch (err) {
-      console.error('[markets] Scheduled refresh failed:', err.message);
-    }
-    scheduleNextRefresh();
-  }, msUntilNext);
-}
-
-scheduleNextRefresh();
+runScheduledRefresh();
+setInterval(runScheduledRefresh, REFRESH_INTERVAL_MS);
+console.log('[markets] Scheduled to refresh every hour');
 
 module.exports = {
   getMarketData,
