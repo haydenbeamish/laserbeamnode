@@ -118,7 +118,10 @@ Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories
 - Service logic in `marketDataService.js`
 
 ## Recent Changes (Jan 2026)
-- **NEW**: AI Analyst Summary - GPT-5.2-chat-latest generates market commentary twice daily (after first data refresh following NYSE and ASX close)
+- **NEW**: AI Analyst Summary - GPT-5.2-chat-latest generates market commentary 3x daily:
+  - US mid-session: 12:30 PM ET (after first data refresh)
+  - US after close: 4:30 PM ET (after first data refresh)
+  - ASX after close: 4:10 PM AEST (after first data refresh)
 - **NEW**: Added /api/markets endpoint for live market data from Yahoo Finance
 - **NEW**: Added marketDataService.js for ticker fetching, calculations, and caching
 

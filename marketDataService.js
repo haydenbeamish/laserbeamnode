@@ -309,41 +309,55 @@ function getNextDataRefreshAfter(afterTime) {
   return new Date(nextRefresh + 60 * 1000); // Add 1 min buffer after data refresh
 }
 
-// Get next AI summary refresh time (first data refresh after US or AU market close)
+// Get next AI summary refresh time
+// 3 times per US trading day:
+// 1. US mid-session: 12:30 PM ET (17:30 UTC standard / 16:30 UTC DST)
+// 2. US after close: 4:30 PM ET (21:30 UTC standard / 20:30 UTC DST)  
+// 3. AU after close: ~4:10 PM AEST (06:10 UTC standard / 05:10 UTC DST)
 function getNextAISummaryTime() {
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const isDST = isUSDST(now);
+  const isAuDST = isAustraliaDST(now);
   
-  // US market close: 20:00 UTC (DST) or 21:00 UTC (standard)
-  const usCloseHour = isUSDST(now) ? 20 : 21;
-  const usClose = new Date(today.getTime() + usCloseHour * 60 * 60 * 1000);
+  // US mid-session: 12:30 PM ET = 17:30 UTC (standard) or 16:30 UTC (DST)
+  const usMidHour = isDST ? 16 : 17;
+  const usMidMin = 30;
+  const usMidSession = new Date(today.getTime() + usMidHour * 60 * 60 * 1000 + usMidMin * 60 * 1000);
   
-  // AU market close: 06:10 UTC (standard) or 05:10 UTC (DST)
-  const auCloseHour = isAustraliaDST(now) ? 5 : 6;
+  // US after close: 4:30 PM ET = 21:30 UTC (standard) or 20:30 UTC (DST)
+  const usCloseHour = isDST ? 20 : 21;
+  const usCloseMin = 30;
+  const usAfterClose = new Date(today.getTime() + usCloseHour * 60 * 60 * 1000 + usCloseMin * 60 * 1000);
+  
+  // AU after close: 4:10 PM AEST = 06:10 UTC (standard) or 05:10 UTC (DST)
+  const auCloseHour = isAuDST ? 5 : 6;
   const auCloseMin = 10;
-  const auClose = new Date(today.getTime() + auCloseHour * 60 * 60 * 1000 + auCloseMin * 60 * 1000);
+  const auAfterClose = new Date(today.getTime() + auCloseHour * 60 * 60 * 1000 + auCloseMin * 60 * 1000);
   
-  // Get first data refresh after each market close
-  const usRefreshTime = getNextDataRefreshAfter(usClose);
-  const auRefreshTime = getNextDataRefreshAfter(auClose);
+  // Get first data refresh after each scheduled time
+  const usMidRefresh = getNextDataRefreshAfter(usMidSession);
+  const usCloseRefresh = getNextDataRefreshAfter(usAfterClose);
+  const auCloseRefresh = getNextDataRefreshAfter(auAfterClose);
   
   // Find next upcoming time (include tomorrow's times)
   const times = [
-    usRefreshTime, 
-    auRefreshTime, 
-    new Date(usRefreshTime.getTime() + 24 * 60 * 60 * 1000),
-    new Date(auRefreshTime.getTime() + 24 * 60 * 60 * 1000)
-  ].filter(t => t > now).sort((a, b) => a - b);
+    { time: usMidRefresh, label: 'US mid-session' },
+    { time: usCloseRefresh, label: 'US close' },
+    { time: auCloseRefresh, label: 'ASX close' },
+    { time: new Date(usMidRefresh.getTime() + 24 * 60 * 60 * 1000), label: 'US mid-session' },
+    { time: new Date(usCloseRefresh.getTime() + 24 * 60 * 60 * 1000), label: 'US close' },
+    { time: new Date(auCloseRefresh.getTime() + 24 * 60 * 60 * 1000), label: 'ASX close' }
+  ].filter(t => t.time > now).sort((a, b) => a.time - b.time);
   
   return times[0];
 }
 
 function scheduleNextAISummary() {
-  const nextTime = getNextAISummaryTime();
-  const delay = nextTime.getTime() - Date.now();
-  const market = nextTime.getUTCHours() < 12 ? 'ASX' : 'NYSE';
+  const next = getNextAISummaryTime();
+  const delay = next.time.getTime() - Date.now();
   
-  console.log(`[markets] Next AI summary scheduled for ${nextTime.toISOString()} (after ${market} close)`);
+  console.log(`[markets] Next AI summary scheduled for ${next.time.toISOString()} (${next.label})`);
   
   setTimeout(async () => {
     await refreshAISummary();
@@ -362,7 +376,7 @@ async function initialize() {
 initialize();
 setInterval(runMarketRefresh, MARKET_REFRESH_INTERVAL_MS);
 console.log('[markets] Market data scheduled to refresh every 20 minutes');
-console.log('[markets] AI summary scheduled after US and AU market closes');
+console.log('[markets] AI summary scheduled 3x daily: US mid-session, US close, ASX close');
 
 module.exports = {
   getMarketData,
