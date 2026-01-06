@@ -348,21 +348,28 @@ app.get("/api/performance", async (req, res) => {
 app.get("/posts", async (req, res) => {
   try {
     const expandParams = ["free_web_content"].map((e) => `expand[]=${e}`).join("&");
-    const url = `https://api.beehiiv.com/v2/publications/pub_ca643944-2ed9-48dc-8eff-711fc225e133/posts?${expandParams}&audience=all&platform=both&status=confirmed&limit=50&page=1&order_by=publish_date&direction=desc`;
+    const baseUrl = `https://api.beehiiv.com/v2/publications/pub_ca643944-2ed9-48dc-8eff-711fc225e133/posts?${expandParams}&audience=all&status=confirmed&limit=50&page=1&order_by=publish_date&direction=desc`;
+    
+    const [webResponse, bothResponse] = await Promise.all([
+      fetch(`${baseUrl}&platform=web`, {
+        headers: { Authorization: `Bearer ${process.env.BEEHIIV_API_KEY}` }
+      }),
+      fetch(`${baseUrl}&platform=both`, {
+        headers: { Authorization: `Bearer ${process.env.BEEHIIV_API_KEY}` }
+      })
+    ]);
 
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${process.env.BEEHIIV_API_KEY}`,
-      },
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      return res.status(response.status).json({ message: "Beehiiv API error", details: text });
+    if (!webResponse.ok || !bothResponse.ok) {
+      return res.status(500).json({ message: "Beehiiv API error" });
     }
 
-    const data = await response.json();
-    res.json(data);
+    const webData = await webResponse.json();
+    const bothData = await bothResponse.json();
+    
+    const allPosts = [...(webData.data || []), ...(bothData.data || [])];
+    allPosts.sort((a, b) => new Date(b.publish_date) - new Date(a.publish_date));
+    
+    res.json({ data: allPosts });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
