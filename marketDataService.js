@@ -201,10 +201,9 @@ Write in a professional, factual tone. No bullet points. Maximum 4 sentences.`;
 
     console.log('[markets] Generating AI summary...');
     const response = await openai.chat.completions.create({
-      model: 'gpt-5.2',
+      model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
-      max_completion_tokens: 250,
-      temperature: 0.7
+      max_completion_tokens: 250
     });
     
     const summary = response.choices[0]?.message?.content?.trim() || null;
