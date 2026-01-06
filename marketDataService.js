@@ -13,14 +13,12 @@ const MA_WINDOWS = [10, 20, 100, 200];
 
 const CATEGORY_ORDER = {
   'Global Markets': 1,
-  'ASX Indices': 2,
-  'ASX Sectors': 3,
-  'Commodities': 4,
-  'Forex': 5,
-  'Bonds': 6,
-  'USA Sectors': 7,
-  'Equal Weight Sectors': 8,
-  'Thematics': 9
+  'Commodities': 2,
+  'Forex': 3,
+  'USA Sectors': 4,
+  'ASX Sectors': 5,
+  'USA Equal Weight Sectors': 6,
+  'USA Thematics': 7
 };
 
 let cache = {
