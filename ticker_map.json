@@ -750,5 +750,37 @@
     "cat": "USA Equal Weight Sectors",
     "bb": "RSPG US EQUITY",
     "co": "Growth"
+  },
+  "SIF": {
+    "disp": "SIF",
+    "source": "stocks.load",
+    "symbol": "SI=F",
+    "cat": "Commodities",
+    "bb": "SI1 Comdty",
+    "co": "Silver"
+  },
+  "REMX": {
+    "disp": "REMX",
+    "source": "stocks.load",
+    "symbol": "REMX",
+    "cat": "Commodities",
+    "bb": "REMX US EQUITY",
+    "co": "Rare Earths"
+  },
+  "US10Y": {
+    "disp": "US10Y",
+    "source": "stocks.load",
+    "symbol": "ZN=F",
+    "cat": "Forex",
+    "bb": "USGG10YR Index",
+    "co": "USA 10 Yr Yield"
+  },
+  "MSOS": {
+    "disp": "MSOS",
+    "source": "stocks.load",
+    "symbol": "MSOS",
+    "cat": "USA Thematics",
+    "bb": "MSOS US EQUITY",
+    "co": "Cannabis"
   }
 }
