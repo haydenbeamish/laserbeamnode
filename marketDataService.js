@@ -86,7 +86,6 @@ async function fetchTickerData(ticker) {
     
     const pxVs10d = calculateMADistance(closes, 10);
     const pxVs20d = calculateMADistance(closes, 20);
-    const pxVs100d = calculateMADistance(closes, 100);
     const pxVs200d = calculateMADistance(closes, 200);
     
     return {
@@ -100,7 +99,6 @@ async function fetchTickerData(ticker) {
       chg1y: round(chg1y, 1),
       pxVs10d: round(pxVs10d, 1),
       pxVs20d: round(pxVs20d, 1),
-      pxVs100d: round(pxVs100d, 1),
       pxVs200d: round(pxVs200d, 1)
     };
   } catch (error) {

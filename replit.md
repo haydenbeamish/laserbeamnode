@@ -113,7 +113,7 @@ Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories
 - Fetches ~400 days of historical data per ticker to calculate moving averages
 - **Refreshes every 20 minutes** (visitors always see cached data)
 - Trading day lookbacks: 1d=1, 1m=21, 1q=63, 1y=252 days
-- Moving average windows: 10, 20, 100, 200 days
+- Moving average windows: 10, 20, 200 days
 - Ticker mapping stored in `ticker_map.json`
 - Service logic in `marketDataService.js`
 
