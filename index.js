@@ -10,7 +10,17 @@ neonConfig.webSocketConstructor = ws;
 
 const app = express();
 app.use(cors({
-  origin: ['https://www.laserbeamcapital.com', 'https://laserbeamcapital.com', /\.replit\.dev$/],
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'https://www.laserbeamcapital.com',
+      'https://laserbeamcapital.com'
+    ];
+    if (!origin || allowedOrigins.includes(origin) || /\.replit\.dev$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
