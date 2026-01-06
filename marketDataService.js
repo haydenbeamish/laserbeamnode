@@ -215,7 +215,7 @@ Write in a professional, factual tone. No bullet points. Maximum 4 sentences.`;
   }
 }
 
-async function refreshCache() {
+async function refreshMarketData() {
   if (refreshPromise) {
     return refreshPromise;
   }
@@ -223,12 +223,11 @@ async function refreshCache() {
   refreshPromise = (async () => {
     try {
       const markets = await fetchAllMarketData();
-      const aiSummary = await generateAISummary(markets);
       cache = {
         markets,
         updatedAt: new Date().toISOString(),
         fetchedAt: Date.now(),
-        aiSummary: aiSummary || cache.aiSummary
+        aiSummary: cache.aiSummary
       };
       return cache;
     } finally {
@@ -237,6 +236,19 @@ async function refreshCache() {
   })();
   
   return refreshPromise;
+}
+
+async function refreshAISummary() {
+  try {
+    console.log('[markets] Refreshing AI summary...');
+    const aiSummary = await generateAISummary(cache.markets);
+    if (aiSummary) {
+      cache.aiSummary = aiSummary;
+      console.log('[markets] AI summary updated');
+    }
+  } catch (err) {
+    console.error('[markets] AI summary refresh failed:', err.message);
+  }
 }
 
 function isCacheValid() {
@@ -254,30 +266,91 @@ async function getMarketData() {
 
 function triggerBackgroundRefresh() {
   if (!isCacheValid() && !refreshPromise) {
-    refreshCache().catch(err => {
+    refreshMarketData().catch(err => {
       console.error('[markets] Background refresh failed:', err.message);
     });
   }
 }
 
-const REFRESH_INTERVAL_MS = 20 * 60 * 1000;
+// Market data refreshes every 20 minutes
+const MARKET_REFRESH_INTERVAL_MS = 20 * 60 * 1000;
 
-async function runScheduledRefresh() {
-  console.log('[markets] Running scheduled refresh...');
+async function runMarketRefresh() {
+  console.log('[markets] Running market data refresh...');
   try {
-    await refreshCache();
-    console.log('[markets] Scheduled refresh completed');
+    await refreshMarketData();
+    console.log('[markets] Market data refresh completed');
   } catch (err) {
-    console.error('[markets] Scheduled refresh failed:', err.message);
+    console.error('[markets] Market data refresh failed:', err.message);
   }
 }
 
-runScheduledRefresh();
-setInterval(runScheduledRefresh, REFRESH_INTERVAL_MS);
-console.log('[markets] Scheduled to refresh every 20 minutes');
+// Check if US is in Daylight Saving Time (March-November)
+function isUSDST(date) {
+  const year = date.getUTCFullYear();
+  const marchSecondSunday = new Date(Date.UTC(year, 2, 8 + (7 - new Date(Date.UTC(year, 2, 1)).getUTCDay()) % 7, 7));
+  const novFirstSunday = new Date(Date.UTC(year, 10, 1 + (7 - new Date(Date.UTC(year, 10, 1)).getUTCDay()) % 7, 6));
+  return date >= marchSecondSunday && date < novFirstSunday;
+}
+
+// Check if Australia is in Daylight Saving Time (October-April)
+function isAustraliaDST(date) {
+  const year = date.getUTCFullYear();
+  const octFirstSunday = new Date(Date.UTC(year, 9, 1 + (7 - new Date(Date.UTC(year, 9, 1)).getUTCDay()) % 7, 16));
+  const aprFirstSunday = new Date(Date.UTC(year, 3, 1 + (7 - new Date(Date.UTC(year, 3, 1)).getUTCDay()) % 7, 16));
+  return date >= octFirstSunday || date < aprFirstSunday;
+}
+
+// Get next AI summary refresh time (after US or AU market close)
+function getNextAISummaryTime() {
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  
+  // US market close: 20:00 UTC (DST) or 21:00 UTC (standard) - add 15 min buffer
+  const usCloseHour = isUSDST(now) ? 20 : 21;
+  const usClose = new Date(today.getTime() + usCloseHour * 60 * 60 * 1000 + 15 * 60 * 1000);
+  
+  // AU market close: 06:10 UTC (standard) or 05:10 UTC (DST) - add 15 min buffer
+  const auCloseHour = isAustraliaDST(now) ? 5 : 6;
+  const auClose = new Date(today.getTime() + auCloseHour * 60 * 60 * 1000 + 25 * 60 * 1000);
+  
+  // Find next upcoming time
+  const times = [usClose, auClose, 
+    new Date(usClose.getTime() + 24 * 60 * 60 * 1000),
+    new Date(auClose.getTime() + 24 * 60 * 60 * 1000)
+  ].filter(t => t > now).sort((a, b) => a - b);
+  
+  return times[0];
+}
+
+function scheduleNextAISummary() {
+  const nextTime = getNextAISummaryTime();
+  const delay = nextTime.getTime() - Date.now();
+  const market = nextTime.getUTCHours() < 12 ? 'ASX' : 'NYSE';
+  
+  console.log(`[markets] Next AI summary scheduled for ${nextTime.toISOString()} (after ${market} close)`);
+  
+  setTimeout(async () => {
+    await refreshAISummary();
+    scheduleNextAISummary();
+  }, delay);
+}
+
+// Initial startup
+async function initialize() {
+  console.log('[markets] Initializing...');
+  await runMarketRefresh();
+  await refreshAISummary();
+  scheduleNextAISummary();
+}
+
+initialize();
+setInterval(runMarketRefresh, MARKET_REFRESH_INTERVAL_MS);
+console.log('[markets] Market data scheduled to refresh every 20 minutes');
+console.log('[markets] AI summary scheduled after US and AU market closes');
 
 module.exports = {
   getMarketData,
   triggerBackgroundRefresh,
-  refreshCache
+  refreshMarketData
 };
