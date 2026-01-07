@@ -207,7 +207,7 @@ Write in a professional, factual tone. No bullet points. Maximum 4 sentences.`;
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     const response = await openrouter.chat.completions.create({
-      model: 'openai/gpt-4o',
+      model: 'deepseek/deepseek-chat-v3-0324',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 250
     }, { signal: controller.signal });

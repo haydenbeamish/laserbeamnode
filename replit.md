@@ -119,7 +119,7 @@ Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories
 - Service logic in `marketDataService.js`
 
 ## Recent Changes (Jan 2026)
-- **UPDATED**: AI Analyst now uses OpenRouter API (openai/gpt-4o model) instead of direct OpenAI
+- **UPDATED**: AI Analyst now uses OpenRouter API (DeepSeek V3.2 model) instead of direct OpenAI
 - **NEW**: AI Analyst Summary - generates market commentary 3x daily:
   - US mid-session: 12:30 PM ET (after first data refresh)
   - US after close: 4:30 PM ET (after first data refresh)
