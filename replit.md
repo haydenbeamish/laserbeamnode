@@ -39,6 +39,7 @@ PostgreSQL database with simplified schema:
 ## Environment Variables (Secrets)
 - `ADMIN_PASSWORD` - Password for admin login
 - `BEEHIIV_API_KEY` - Beehiiv API key for blog posts
+- `OPENROUTER` - OpenRouter API key for AI market summaries
 - `DATABASE_URL` - PostgreSQL connection string (auto-provided by Replit)
 
 ## Admin Panel Features
@@ -118,7 +119,8 @@ Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories
 - Service logic in `marketDataService.js`
 
 ## Recent Changes (Jan 2026)
-- **NEW**: AI Analyst Summary - GPT-5.2-chat-latest generates market commentary 3x daily:
+- **UPDATED**: AI Analyst now uses OpenRouter API (openai/gpt-4o model) instead of direct OpenAI
+- **NEW**: AI Analyst Summary - generates market commentary 3x daily:
   - US mid-session: 12:30 PM ET (after first data refresh)
   - US after close: 4:30 PM ET (after first data refresh)
   - ASX after close: 4:10 PM AEST (after first data refresh)

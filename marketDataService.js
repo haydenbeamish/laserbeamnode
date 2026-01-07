@@ -3,7 +3,10 @@ const pLimit = require('p-limit').default;
 const OpenAI = require('openai');
 
 const yahooFinance = new YahooFinance();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openrouter = new OpenAI({ 
+  apiKey: process.env.OPENROUTER,
+  baseURL: 'https://openrouter.ai/api/v1'
+});
 const fs = require('fs');
 const path = require('path');
 
@@ -159,8 +162,8 @@ async function fetchAllMarketData() {
 }
 
 async function generateAISummary(markets) {
-  if (!process.env.OPENAI_API_KEY) {
-    console.log('[markets] No OpenAI API key, skipping AI summary');
+  if (!process.env.OPENROUTER) {
+    console.log('[markets] No OpenRouter API key, skipping AI summary');
     return null;
   }
   
@@ -203,10 +206,10 @@ Write in a professional, factual tone. No bullet points. Maximum 4 sentences.`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const response = await openai.chat.completions.create({
-      model: 'gpt-5.2-chat-latest',
+    const response = await openrouter.chat.completions.create({
+      model: 'openai/gpt-4o',
       messages: [{ role: 'user', content: prompt }],
-      max_completion_tokens: 250
+      max_tokens: 250
     }, { signal: controller.signal });
     
     clearTimeout(timeoutId);
