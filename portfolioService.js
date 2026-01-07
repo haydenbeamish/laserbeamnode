@@ -122,8 +122,9 @@ async function getLatestEmailWithAttachment(senderEmail, fileNamePattern) {
   return null;
 }
 
-async function getLatestEmailWithSubject(senderEmail, subject) {
+async function getLatestExternalHoldingsEmail(senderEmail, subject) {
   const emails = await getEmailsFromSender(senderEmail, subject);
+  const client = await getGraphClient();
 
   for (const email of emails) {
     if (email.hasAttachments) {
@@ -137,8 +138,26 @@ async function getLatestEmailWithSubject(senderEmail, subject) {
         return {
           email,
           attachment: excelAttachment,
+          type: 'excel'
         };
       }
+    }
+    
+    try {
+      const fullEmail = await client
+        .api(`/users/${USER_EMAIL}/messages/${email.id}`)
+        .select('body')
+        .get();
+      
+      if (fullEmail.body && fullEmail.body.content) {
+        return {
+          email,
+          body: fullEmail.body.content,
+          type: 'body'
+        };
+      }
+    } catch (err) {
+      console.error('[portfolio] Error fetching email body:', err.message);
     }
   }
 
@@ -255,6 +274,72 @@ async function parseExternalHoldingsFromExcel(buffer) {
   }
 }
 
+function parseExternalHoldingsFromBody(htmlContent) {
+  try {
+    const textContent = htmlContent
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/tr>/gi, '\n')
+      .replace(/<\/td>/gi, '\t')
+      .replace(/<\/th>/gi, '\t')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+
+    const lines = textContent.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const positions = [];
+
+    console.log('[portfolio] Parsing email body, lines found:', lines.length);
+
+    for (const line of lines) {
+      const parts = line.split(/\t+|\s{2,}/).map(p => p.trim()).filter(p => p.length > 0);
+      
+      if (parts.length < 3) continue;
+      
+      let ticker = parts[0];
+      const tickerMatch = ticker.match(/\(([^:]+):([^)]+)\)/);
+      if (tickerMatch) {
+        ticker = tickerMatch[2];
+      }
+      
+      if (/^(stock|ticker|symbol|company|name)$/i.test(ticker)) continue;
+      
+      const sharesStr = parts[1];
+      const quantity = parseFloat(sharesStr.replace(/,/g, '') || '0');
+      
+      let marketValue = 0;
+      if (parts.length >= 4) {
+        const valueStr = parts[3];
+        marketValue = parseFloat(valueStr.replace(/[$,]/g, '') || '0');
+      } else if (parts.length >= 3) {
+        const valueStr = parts[2];
+        marketValue = parseFloat(valueStr.replace(/[$,]/g, '') || '0');
+      }
+
+      if (ticker && quantity > 0 && marketValue > 0 && !isNaN(quantity) && !isNaN(marketValue)) {
+        const currentPrice = marketValue / quantity;
+
+        positions.push({
+          ticker,
+          symbol: ticker,
+          quantity,
+          currentPrice,
+          marketValue,
+          source: 'External',
+        });
+      }
+    }
+
+    console.log('[portfolio] External holdings from body parsed:', positions.length, 'positions');
+    return positions;
+  } catch (error) {
+    console.error('[portfolio] Error parsing external holdings from body:', error.message);
+    return [];
+  }
+}
+
 function ensureDataDirectory() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -358,21 +443,25 @@ async function fetchPortfolioData() {
 
   try {
     console.log('[portfolio] Fetching External Holdings email from:', EXTERNAL_HOLDINGS_EMAIL);
-    const externalEmail = await getLatestEmailWithSubject(EXTERNAL_HOLDINGS_EMAIL, EXTERNAL_HOLDINGS_SUBJECT);
+    const externalEmail = await getLatestExternalHoldingsEmail(EXTERNAL_HOLDINGS_EMAIL, EXTERNAL_HOLDINGS_SUBJECT);
 
     if (externalEmail) {
-      const { attachment } = externalEmail;
-      console.log('[portfolio] Found External Holdings attachment:', attachment.name);
-      const buffer = Buffer.from(attachment.contentBytes, 'base64');
-
-      externalPositions = await parseExternalHoldingsFromExcel(buffer);
-      logUpdate('ExternalHoldings.xlsx', 'success', `Fetched ${externalPositions.length} external positions`);
+      if (externalEmail.type === 'excel') {
+        console.log('[portfolio] Found External Holdings attachment:', externalEmail.attachment.name);
+        const buffer = Buffer.from(externalEmail.attachment.contentBytes, 'base64');
+        externalPositions = await parseExternalHoldingsFromExcel(buffer);
+        logUpdate('ExternalHoldings.xlsx', 'success', `Fetched ${externalPositions.length} external positions from Excel`);
+      } else if (externalEmail.type === 'body') {
+        console.log('[portfolio] Found External Holdings in email body');
+        externalPositions = parseExternalHoldingsFromBody(externalEmail.body);
+        logUpdate('ExternalHoldings.email', 'success', `Fetched ${externalPositions.length} external positions from email body`);
+      }
     } else {
       console.log('[portfolio] No External Holdings email found');
     }
   } catch (error) {
     console.error('[portfolio] Error fetching external holdings email:', error.message);
-    logUpdate('ExternalHoldings.xlsx', 'error', `Failed to fetch: ${error.message}`);
+    logUpdate('ExternalHoldings', 'error', `Failed to fetch: ${error.message}`);
   }
 
   const allPositions = [...ibPositions, ...externalPositions].sort((a, b) => b.marketValue - a.marketValue);
