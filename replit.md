@@ -27,6 +27,7 @@ PostgreSQL database with simplified schema:
 - `GET /` - Welcome message
 - `GET /api/performance` - Optimized endpoint returning ALL site data with calculated metrics
 - `GET /api/markets` - Live market data for ~100 tickers from Yahoo Finance (cached 20 min)
+- `GET /api/portfolio` - Portfolio positions and summary from IB emails + external holdings (cached 5 min)
 - `GET /posts` - Fetch posts from Beehiiv API
 - `GET /selectedpost/:id` - Fetch specific post by ID
 
@@ -41,6 +42,10 @@ PostgreSQL database with simplified schema:
 - `BEEHIIV_API_KEY` - Beehiiv API key for blog posts
 - `OPENROUTER` - OpenRouter API key for AI market summaries
 - `DATABASE_URL` - PostgreSQL connection string (auto-provided by Replit)
+- `AZURE_CLIENT_ID` - Microsoft Azure app client ID for Graph API
+- `AZURE_CLIENT_SECRET` - Microsoft Azure app client secret
+- `AZURE_TENANT_ID` - Microsoft Azure tenant ID
+- `IB_EMAIL_ADDRESS` - Interactive Brokers email address (default: donotreply@interactivebrokers.com)
 
 ## Admin Panel Features
 - Login with username "admin" and password from ADMIN_PASSWORD secret

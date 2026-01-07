@@ -13,15 +13,19 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@azure/msal-node": "^3.8.4",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@neondatabase/serverless": "^1.0.2",
     "cors": "^2.8.5",
     "drizzle-kit": "^0.31.7",
     "drizzle-orm": "^0.44.7",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",
+    "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^2.7.0",
     "openai": "^6.15.0",
     "p-limit": "^7.2.0",
+    "papaparse": "^5.5.3",
     "read-excel-file": "^5.4.0",
     "ws": "^8.18.3",
     "yahoo-finance2": "^3.11.2"

@@ -6,6 +6,7 @@ const path = require("path");
 const { Pool, neonConfig } = require("@neondatabase/serverless");
 const ws = require("ws");
 const marketDataService = require("./marketDataService");
+const portfolioService = require("./portfolioService");
 
 neonConfig.webSocketConstructor = ws;
 
@@ -420,6 +421,19 @@ app.get("/api/markets", async (req, res) => {
   } catch (err) {
     console.error("[/api/markets] Error:", err.message);
     res.status(500).json({ error: true, message: "Failed to load market data" });
+  }
+});
+
+app.get("/api/portfolio", async (req, res) => {
+  try {
+    const data = await portfolioService.getPortfolioData();
+    if (!data) {
+      return res.status(503).json({ error: true, message: "Portfolio service unavailable - missing Azure credentials" });
+    }
+    res.json(data);
+  } catch (err) {
+    console.error("[/api/portfolio] Error:", err.message);
+    res.status(500).json({ error: true, message: "Failed to load portfolio data" });
   }
 });
 
