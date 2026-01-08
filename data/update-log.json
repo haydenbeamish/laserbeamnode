@@ -10,5 +10,29 @@
     "file": "NAV.csv",
     "status": "success",
     "message": "Fetched cash balance: $2,531,024.871"
+  },
+  {
+    "timestamp": "2026-01-08T08:04:10.065Z",
+    "file": "NAVPortfolio.xlsx",
+    "status": "error",
+    "message": "No email found in Data folder"
+  },
+  {
+    "timestamp": "2026-01-08T08:05:03.661Z",
+    "file": "NAVPortfolio.xlsx",
+    "status": "success",
+    "message": "Fetched 1 positions from NAV Portfolio"
+  },
+  {
+    "timestamp": "2026-01-08T08:06:46.538Z",
+    "file": "NAVPortfolio.xlsx",
+    "status": "success",
+    "message": "Fetched 18 positions from NAV Portfolio"
+  },
+  {
+    "timestamp": "2026-01-08T08:09:36.459Z",
+    "file": "NAVPortfolio.xlsx",
+    "status": "success",
+    "message": "Fetched 21 positions from NAV Portfolio"
   }
 ]

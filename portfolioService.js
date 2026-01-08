@@ -4,6 +4,7 @@ require('isomorphic-fetch');
 const XLSXFull = require('xlsx');
 const AdmZip = require('adm-zip');
 const YahooFinance = require('yahoo-finance2').default;
+const yahooFinance = new YahooFinance();
 const fs = require('fs');
 const path = require('path');
 
@@ -211,6 +212,9 @@ async function parseNAVPortfolioExcel(excelBuffer) {
     // Column B (1) = Currency
     // Column C (2) = Ticker
     // Column E (4) = Quantity
+    // Column F (5) = Settlement Price
+    // Column G (6) = Market Value (Native)
+    // Column H (7) = Market Value (Base/AUD)
     // Column M (12) = % of AUM
     for (let i = 6; i < data.length; i++) {
       const row = data[i];
@@ -241,6 +245,24 @@ async function parseNAVPortfolioExcel(excelBuffer) {
 
       if (quantity <= 0) continue;
 
+      // Column F - Settlement Price (index 5) - fallback price
+      const settlementPriceValue = row[5];
+      const settlementPrice = typeof settlementPriceValue === 'number'
+        ? settlementPriceValue
+        : parseFloat(settlementPriceValue?.toString().replace(/,/g, '') || '0');
+
+      // Column G - Market Value Native (index 6) - fallback market value
+      const marketValueNativeValue = row[6];
+      const marketValueNative = typeof marketValueNativeValue === 'number'
+        ? marketValueNativeValue
+        : parseFloat(marketValueNativeValue?.toString().replace(/,/g, '') || '0');
+
+      // Column H - Market Value Base/AUD (index 7) - fallback AUD value
+      const marketValueBaseValue = row[7];
+      const marketValueBase = typeof marketValueBaseValue === 'number'
+        ? marketValueBaseValue
+        : parseFloat(marketValueBaseValue?.toString().replace(/,/g, '') || '0');
+
       // Column M - % of AUM (index 12)
       const aumPercentValue = row[12];
       const aumPercent = typeof aumPercentValue === 'number'
@@ -255,6 +277,9 @@ async function parseNAVPortfolioExcel(excelBuffer) {
         currency: currency.toString().trim(),
         quantity: quantity,
         aumPercent: aumPercent,
+        fallbackPrice: settlementPrice,
+        fallbackMarketValue: marketValueNative,
+        fallbackMarketValueAUD: marketValueBase,
       });
 
       console.log(`[portfolio] Row ${i + 1}: ${ticker} - ${quantity} shares (${currency}) - ${aumPercent.toFixed(2)}% AUM`);
@@ -270,8 +295,23 @@ async function parseNAVPortfolioExcel(excelBuffer) {
   }
 }
 
-async function fetchLivePrice(ticker, currency) {
+function cleanTicker(ticker) {
+  // Remove exchange suffix like " AU", " US", " CN", " HK" from Bloomberg-style tickers
+  const parts = ticker.trim().split(' ');
+  if (parts.length > 1) {
+    const suffix = parts[parts.length - 1].toUpperCase();
+    if (['AU', 'US', 'CN', 'HK', 'LN', 'JP', 'GR', 'FP'].includes(suffix)) {
+      return parts.slice(0, -1).join(' ');
+    }
+  }
+  return ticker;
+}
+
+async function fetchLivePrice(rawTicker, currency) {
   try {
+    // Clean ticker to remove exchange suffix
+    const ticker = cleanTicker(rawTicker);
+    
     // Convert ticker to Yahoo Finance format based on currency/exchange
     let yahooTicker = ticker;
 
@@ -289,9 +329,9 @@ async function fetchLivePrice(ticker, currency) {
     }
     // US stocks - no suffix needed for most US tickers
 
-    console.log(`[portfolio] Fetching price for ${ticker} (${yahooTicker}) in ${currency}`);
+    console.log(`[portfolio] Fetching price for ${rawTicker} -> ${yahooTicker} in ${currency}`);
 
-    const quote = await YahooFinance.quote(yahooTicker);
+    const quote = await yahooFinance.quote(yahooTicker);
 
     if (!quote || !quote.regularMarketPrice) {
       console.error(`[portfolio] No price found for ${yahooTicker}`);
@@ -315,28 +355,41 @@ async function fetchLivePrice(ticker, currency) {
       name: quote.shortName || quote.longName || ticker,
     };
   } catch (error) {
-    console.error(`[portfolio] Error fetching price for ${ticker}:`, error.message);
+    console.error(`[portfolio] Error fetching price for ${rawTicker}:`, error.message);
     return null;
   }
 }
+
+// Cache forex rates to avoid repeated API calls
+const forexCache = {};
+const FOREX_CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 async function fetchAUDConversionRate(fromCurrency) {
   try {
     if (fromCurrency === 'AUD') return 1.0;
 
+    // Check cache
+    const cached = forexCache[fromCurrency];
+    if (cached && (Date.now() - cached.fetchedAt) < FOREX_CACHE_DURATION_MS) {
+      return cached.rate;
+    }
+
     // Fetch forex rate from Yahoo Finance
     const forexPair = `${fromCurrency}AUD=X`;
     console.log(`[portfolio] Fetching forex rate: ${forexPair}`);
 
-    const quote = await YahooFinance.quote(forexPair);
+    const quote = await yahooFinance.quote(forexPair);
 
     if (!quote || !quote.regularMarketPrice) {
       console.error(`[portfolio] No forex rate found for ${forexPair}`);
       return 1.0; // Default to 1.0 if rate not found
     }
 
-    console.log(`[portfolio] ${fromCurrency} to AUD rate: ${quote.regularMarketPrice}`);
-    return quote.regularMarketPrice;
+    const rate = quote.regularMarketPrice;
+    forexCache[fromCurrency] = { rate, fetchedAt: Date.now() };
+    
+    console.log(`[portfolio] ${fromCurrency} to AUD rate: ${rate}`);
+    return rate;
   } catch (error) {
     console.error(`[portfolio] Error fetching forex rate for ${fromCurrency}:`, error.message);
     return 1.0;
@@ -404,15 +457,21 @@ async function fetchPortfolioData() {
   let cashBalance = 0;
 
   try {
-    console.log('[portfolio] Fetching NAV Portfolio from Data folder');
+    console.log('[portfolio] Fetching NAV Portfolio');
     console.log('[portfolio] Looking for emails from:', NAV_PORTFOLIO_EMAIL);
     console.log('[portfolio] With subject containing:', NAV_PORTFOLIO_SUBJECT);
 
-    const emails = await getEmailsFromFolder(DATA_FOLDER, NAV_PORTFOLIO_EMAIL, NAV_PORTFOLIO_SUBJECT);
+    // First try Data folder, then fall back to inbox
+    let emails = await getEmailsFromFolder(DATA_FOLDER, NAV_PORTFOLIO_EMAIL, NAV_PORTFOLIO_SUBJECT);
+    
+    if (!emails || emails.length === 0) {
+      console.log('[portfolio] No emails in Data folder, trying inbox...');
+      emails = await getEmailsFromSender(NAV_PORTFOLIO_EMAIL, NAV_PORTFOLIO_SUBJECT);
+    }
 
     if (!emails || emails.length === 0) {
-      console.log('[portfolio] No Daily Reports email found in Data folder');
-      logUpdate('NAVPortfolio.xlsx', 'error', 'No email found in Data folder');
+      console.log('[portfolio] No Daily Reports email found');
+      logUpdate('NAVPortfolio.xlsx', 'error', 'No email found');
       return null;
     }
 
@@ -479,39 +538,60 @@ async function fetchPortfolioData() {
     for (const position of navPositions) {
       const priceData = await fetchLivePrice(position.ticker, position.currency);
 
-      if (!priceData) {
-        console.warn(`[portfolio] Skipping ${position.ticker} - no price data`);
-        continue;
+      let currentPrice, previousClose, priceChange, priceChangePercent, currency, yahooTicker;
+      let marketValueNative, marketValueAUD, audRate, pnl;
+      let isLivePrice = true;
+
+      if (priceData) {
+        // Use live Yahoo Finance data
+        currentPrice = priceData.price;
+        previousClose = priceData.previousClose;
+        priceChange = priceData.priceChange;
+        priceChangePercent = priceData.priceChangePercent;
+        currency = priceData.currency;
+        yahooTicker = priceData.yahooTicker;
+
+        marketValueNative = position.quantity * currentPrice;
+        audRate = await fetchAUDConversionRate(currency);
+        marketValueAUD = marketValueNative * audRate;
+        pnl = (priceChangePercent / 100) * marketValueAUD;
+      } else {
+        // Use fallback data from Excel (settlement price, market value)
+        console.log(`[portfolio] Using fallback data for ${position.ticker}`);
+        isLivePrice = false;
+        
+        currentPrice = position.fallbackPrice || 0;
+        previousClose = currentPrice;
+        priceChange = 0;
+        priceChangePercent = 0;
+        currency = position.currency;
+        yahooTicker = position.ticker;
+
+        marketValueNative = position.fallbackMarketValue || 0;
+        marketValueAUD = position.fallbackMarketValueAUD || marketValueNative;
+        audRate = marketValueNative > 0 ? marketValueAUD / marketValueNative : 1;
+        pnl = 0; // No P&L for stale prices
       }
 
-      // Calculate market value in native currency
-      const marketValueNative = position.quantity * priceData.price;
-
-      // Get AUD conversion rate
-      const audRate = await fetchAUDConversionRate(priceData.currency);
-      const marketValueAUD = marketValueNative * audRate;
-
-      // Calculate P&L (price change % x market value AUD)
-      const pnl = (priceData.priceChangePercent / 100) * marketValueAUD;
-
       positions.push({
-        ticker: position.ticker,
-        symbol: priceData.yahooTicker,
+        ticker: cleanTicker(position.ticker),
+        symbol: yahooTicker,
         name: position.stockName,
         quantity: position.quantity,
-        currentPrice: priceData.price,
-        previousClose: priceData.previousClose,
-        priceChange: priceData.priceChange,
-        priceChangePercent: priceData.priceChangePercent,
-        currency: priceData.currency,
+        currentPrice: currentPrice,
+        previousClose: previousClose,
+        priceChange: priceChange,
+        priceChangePercent: priceChangePercent,
+        currency: currency,
         marketValue: marketValueNative,
         marketValueAUD: marketValueAUD,
         audConversionRate: audRate,
         pnl: pnl,
         portfolioWeight: position.aumPercent,
+        isLivePrice: isLivePrice,
       });
 
-      console.log(`[portfolio] ${position.ticker}: ${position.quantity} @ ${priceData.price} ${priceData.currency} = ${marketValueNative.toFixed(2)} (${marketValueAUD.toFixed(2)} AUD), Change: ${priceData.priceChangePercent.toFixed(2)}%, P&L: ${pnl.toFixed(2)}`);
+      console.log(`[portfolio] ${position.ticker}: ${position.quantity} @ ${currentPrice} ${currency} = ${marketValueNative.toFixed(2)} (${marketValueAUD.toFixed(2)} AUD), Change: ${priceChangePercent.toFixed(2)}%${isLivePrice ? '' : ' [STALE]'}`);
     }
 
     // Sort by portfolio weight descending
