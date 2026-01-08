@@ -15,11 +15,11 @@ const COLORS = [
 export default function PortfolioCharts({ positions }: PortfolioChartsProps) {
   // Prepare data for pie chart - show top 10 positions, group rest as "Others"
   const topPositions = positions.slice(0, 10)
-  const othersValue = positions.slice(10).reduce((sum, pos) => sum + pos.marketValue, 0)
+  const othersValue = positions.slice(10).reduce((sum, pos) => sum + (pos.marketValueAUD || pos.marketValue), 0)
 
   const chartData = topPositions.map((pos) => ({
     name: pos.ticker,
-    value: pos.marketValue,
+    value: pos.marketValueAUD || pos.marketValue,
   }))
 
   if (othersValue > 0) {
@@ -29,7 +29,7 @@ export default function PortfolioCharts({ positions }: PortfolioChartsProps) {
     })
   }
 
-  const totalValue = positions.reduce((sum, pos) => sum + pos.marketValue, 0)
+  const totalValue = positions.reduce((sum, pos) => sum + (pos.marketValueAUD || pos.marketValue), 0)
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
@@ -64,7 +64,8 @@ export default function PortfolioCharts({ positions }: PortfolioChartsProps) {
           <div className="mt-6 space-y-2">
             <h4 className="text-sm font-semibold text-gray-700 mb-2">Top Holdings</h4>
             {topPositions.map((position, index) => {
-              const percentage = (position.marketValue / totalValue) * 100
+              const valueAUD = position.marketValueAUD || position.marketValue
+              const percentage = (valueAUD / totalValue) * 100
               return (
                 <div key={`${position.ticker}-${index}`} className="flex justify-between items-center text-sm">
                   <div className="flex items-center">
