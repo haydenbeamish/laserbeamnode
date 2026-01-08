@@ -123,7 +123,69 @@ Fetches live market data from Yahoo Finance for ~100 tickers across 9 categories
 - Ticker mapping stored in `ticker_map.json`
 - Service logic in `marketDataService.js`
 
+## Portfolio Endpoint Details (/api/portfolio)
+Parses NAV Portfolio Notebook Excel files from daily emails to display portfolio positions with live pricing.
+
+**Data source:** Reporting@navbackoffice.com emails with subject "Daily Reports"
+- Extracts ZIP attachment, finds "NAV Portfolio Notebook" Excel file
+- Parses "Portfolio Valuation" tab for positions
+
+**Excel columns parsed:**
+- Column A: Stock name
+- Column C: Ticker (Bloomberg format, e.g., "AMZN US", "S32 AU")
+- Column E: Quantity
+- Column F: Settlement Price (fallback)
+- Column G/H: Market Value (fallback in native/AUD)
+- Column M: % of AUM
+
+**Response format:**
+```json
+{
+  "positions": [
+    {
+      "ticker": "AMZN",
+      "symbol": "AMZN",
+      "name": "Amazon.Com Inc",
+      "quantity": 3400,
+      "currentPrice": 241.56,
+      "previousClose": 240.92,
+      "priceChange": 0.64,
+      "priceChangePercent": 0.27,
+      "currency": "USD",
+      "marketValue": 821304,
+      "marketValueAUD": 1225467.70,
+      "audConversionRate": 1.4921,
+      "pnl": 3308.76,
+      "portfolioWeight": 4.69,
+      "isLivePrice": true
+    }
+  ],
+  "summary": {
+    "totalValue": 19481609.99,
+    "cashBalance": 5945793.32,
+    "totalPositions": 21,
+    "fum": 25427403.31,
+    "totalPnL": -53898.98,
+    "totalChangePercent": -0.21
+  },
+  "updatedAt": "2026-01-08T08:09:53.123Z"
+}
+```
+
+**Implementation details:**
+- Ticker cleaning: Strips exchange suffix ("AMZN US" → "AMZN", "S32 AU" → "S32.AX")
+- Live pricing: Yahoo Finance with forex rate caching (USDAUD, CADAUD)
+- Fallback pricing: Uses Excel settlement price/market value when Yahoo unavailable (marked isLivePrice: false)
+- Cash calculation: 100% - sum of position % AUM values
+- **Refreshes every 5 minutes** (cached between refreshes)
+- Service logic in `portfolioService.js`
+
 ## Recent Changes (Jan 2026)
+- **REFACTORED**: Portfolio endpoint now uses single source: Reporting@navbackoffice.com "Daily Reports" emails
+- **NEW**: ZIP extraction and "NAV Portfolio Notebook" Excel parsing
+- **NEW**: Fallback to Excel settlement prices when Yahoo Finance unavailable (derivatives, options, commodities)
+- **NEW**: isLivePrice flag to indicate live vs stale pricing
+- **REMOVED**: All legacy IB CSV and external holdings email parsing
 - **UPDATED**: AI Analyst now uses OpenRouter API (DeepSeek V3.2 model) instead of direct OpenAI
 - **NEW**: AI Analyst Summary - generates market commentary 3x daily:
   - US mid-session: 12:30 PM ET (after first data refresh)
