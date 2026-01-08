@@ -1,8 +1,6 @@
 const { Client } = require('@microsoft/microsoft-graph-client');
 const { ConfidentialClientApplication } = require('@azure/msal-node');
 require('isomorphic-fetch');
-const Papa = require('papaparse');
-const XLSX = require('read-excel-file/node');
 const XLSXFull = require('xlsx');
 const AdmZip = require('adm-zip');
 const YahooFinance = require('yahoo-finance2').default;
@@ -12,10 +10,7 @@ const path = require('path');
 const DATA_DIR = './data';
 const LOG_FILE = path.join(DATA_DIR, 'update-log.json');
 
-const IB_EMAIL = process.env.IB_EMAIL_ADDRESS || 'donotreply@interactivebrokers.com';
 const USER_EMAIL = process.env.USER_EMAIL || 'hayden@laserbeamcapital.com';
-const EXTERNAL_HOLDINGS_EMAIL = process.env.EXTERNAL_HOLDINGS_EMAIL || 'hayden@laserbeamcapital.com';
-const EXTERNAL_HOLDINGS_SUBJECT = 'External Holdings';
 const NAV_PORTFOLIO_EMAIL = 'Reporting@navbackoffice.com';
 const NAV_PORTFOLIO_SUBJECT = 'Daily Reports';
 const DATA_FOLDER = 'Data';
@@ -154,247 +149,6 @@ async function getEmailAttachments(messageId) {
   }
 }
 
-async function getLatestEmailWithAttachment(senderEmail, fileNamePattern) {
-  const emails = await getEmailsFromSender(senderEmail);
-
-  for (const email of emails) {
-    if (email.hasAttachments) {
-      const attachments = await getEmailAttachments(email.id);
-
-      const matchingAttachment = attachments.find((att) =>
-        att.name.includes(fileNamePattern)
-      );
-
-      if (matchingAttachment) {
-        return {
-          email,
-          attachment: matchingAttachment,
-        };
-      }
-    }
-  }
-
-  return null;
-}
-
-async function getLatestExternalHoldingsEmail(senderEmail, subject) {
-  const emails = await getEmailsFromSender(senderEmail, subject);
-  const client = await getGraphClient();
-
-  for (const email of emails) {
-    if (email.hasAttachments) {
-      const attachments = await getEmailAttachments(email.id);
-      const excelAttachment = attachments.find((att) => 
-        att.name.endsWith('.xlsx') || att.name.endsWith('.xls') ||
-        att.contentType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-        att.contentType === 'application/vnd.ms-excel'
-      );
-      if (excelAttachment) {
-        return {
-          email,
-          attachment: excelAttachment,
-          type: 'excel'
-        };
-      }
-    }
-    
-    try {
-      const fullEmail = await client
-        .api(`/users/${USER_EMAIL}/messages/${email.id}`)
-        .select('body')
-        .get();
-      
-      if (fullEmail.body && fullEmail.body.content) {
-        return {
-          email,
-          body: fullEmail.body.content,
-          type: 'body'
-        };
-      }
-    } catch (err) {
-      console.error('[portfolio] Error fetching email body:', err.message);
-    }
-  }
-
-  return null;
-}
-
-function parsePortfolioCSV(csvContent) {
-  const parsed = Papa.parse(csvContent, {
-    header: true,
-    skipEmptyLines: true,
-  });
-
-  const positions = [];
-
-  parsed.data.forEach((row) => {
-    const symbol = row.Symbol || row.Ticker;
-    const marketValue = parseFloat(
-      row.PositionValueInBase ||
-      row.PositionValue ||
-      row['Market Value'] ||
-      row.Value ||
-      0
-    );
-    const multiplier = parseFloat(row.Multiplier || row.Quantity || row.Shares || 1);
-
-    if (symbol && marketValue !== 0) {
-      let currentPrice = 0;
-      if (multiplier > 0 && marketValue > 0) {
-        currentPrice = Math.abs(marketValue / multiplier);
-      }
-
-      positions.push({
-        ticker: symbol,
-        symbol: symbol,
-        quantity: multiplier,
-        currentPrice: currentPrice,
-        marketValue: Math.abs(marketValue),
-        source: 'IB',
-      });
-    }
-  });
-
-  console.log('[portfolio] CSV parsed:', positions.length, 'positions');
-  return positions;
-}
-
-function parseNAVCSV(csvContent) {
-  const parsed = Papa.parse(csvContent, {
-    header: false,
-    skipEmptyLines: true,
-  });
-
-  const rows = parsed.data;
-  if (rows.length > 0) {
-    const lastRow = rows[rows.length - 1];
-    const cashBalance = parseFloat(lastRow[1] || '0');
-    return cashBalance;
-  }
-
-  return 0;
-}
-
-async function parseExternalHoldingsFromExcel(buffer) {
-  try {
-    const rows = await XLSX(buffer);
-    const positions = [];
-
-    console.log('[portfolio] External holdings rows:', rows.length);
-
-    for (let i = 2; i < rows.length; i++) {
-      const row = rows[i];
-
-      if (!row[0] || row[0].toString().trim() === '') continue;
-
-      const codeCell = row[0].toString();
-
-      let ticker = '';
-      const tickerMatch = codeCell.match(/\(([^:]+):([^)]+)\)/);
-      if (tickerMatch) {
-        ticker = tickerMatch[2];
-      } else {
-        ticker = codeCell;
-      }
-
-      const sharesValue = row[1];
-      const quantity = typeof sharesValue === 'number'
-        ? sharesValue
-        : parseFloat(sharesValue?.toString().replace(/,/g, '') || '0');
-
-      const valueCell = row[3];
-      const marketValue = typeof valueCell === 'number'
-        ? valueCell
-        : parseFloat(valueCell?.toString().replace(/[$,]/g, '') || '0');
-
-      if (ticker && quantity > 0 && marketValue > 0) {
-        const currentPrice = marketValue / quantity;
-
-        positions.push({
-          ticker,
-          symbol: ticker,
-          quantity,
-          currentPrice,
-          marketValue,
-          source: 'External',
-        });
-      }
-    }
-
-    console.log('[portfolio] External holdings parsed:', positions.length, 'positions');
-    return positions;
-  } catch (error) {
-    console.error('[portfolio] Error parsing external holdings:', error.message);
-    return [];
-  }
-}
-
-function parseExternalHoldingsFromBody(htmlContent) {
-  try {
-    const textContent = htmlContent
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/tr>/gi, '\n')
-      .replace(/<\/td>/gi, '\t')
-      .replace(/<\/th>/gi, '\t')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .trim();
-
-    const lines = textContent.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const positions = [];
-
-    console.log('[portfolio] Parsing email body, lines found:', lines.length);
-
-    for (const line of lines) {
-      const parts = line.split(/\t+|\s{2,}/).map(p => p.trim()).filter(p => p.length > 0);
-
-      if (parts.length < 3) continue;
-
-      let ticker = parts[0];
-      const tickerMatch = ticker.match(/\(([^:]+):([^)]+)\)/);
-      if (tickerMatch) {
-        ticker = tickerMatch[2];
-      }
-
-      if (/^(stock|ticker|symbol|company|name)$/i.test(ticker)) continue;
-
-      const sharesStr = parts[1];
-      const quantity = parseFloat(sharesStr.replace(/,/g, '') || '0');
-
-      let marketValue = 0;
-      if (parts.length >= 4) {
-        const valueStr = parts[3];
-        marketValue = parseFloat(valueStr.replace(/[$,]/g, '') || '0');
-      } else if (parts.length >= 3) {
-        const valueStr = parts[2];
-        marketValue = parseFloat(valueStr.replace(/[$,]/g, '') || '0');
-      }
-
-      if (ticker && quantity > 0 && marketValue > 0 && !isNaN(quantity) && !isNaN(marketValue)) {
-        const currentPrice = marketValue / quantity;
-
-        positions.push({
-          ticker,
-          symbol: ticker,
-          quantity,
-          currentPrice,
-          marketValue,
-          source: 'External',
-        });
-      }
-    }
-
-    console.log('[portfolio] External holdings from body parsed:', positions.length, 'positions');
-    return positions;
-  } catch (error) {
-    console.error('[portfolio] Error parsing external holdings from body:', error.message);
-    return [];
-  }
-}
-
 async function extractNAVPortfolioFromZip(zipBuffer) {
   try {
     const zip = new AdmZip(zipBuffer);
@@ -405,19 +159,19 @@ async function extractNAVPortfolioFromZip(zipBuffer) {
       console.log('[portfolio] ZIP file:', entry.entryName);
     });
 
-    // Find Excel file with "NAV Portfolio" in the name
+    // Find Excel file with "NAV Portfolio Notebook" in the name
     const navPortfolioEntry = zipEntries.find(entry => {
       const name = entry.entryName.toLowerCase();
-      return (name.includes('nav portfolio') || name.includes('nav_portfolio')) &&
+      return name.includes('nav portfolio notebook') &&
              (name.endsWith('.xlsx') || name.endsWith('.xls'));
     });
 
     if (!navPortfolioEntry) {
-      console.error('[portfolio] No NAV Portfolio Excel file found in ZIP');
+      console.error('[portfolio] No NAV Portfolio Notebook Excel file found in ZIP');
       return null;
     }
 
-    console.log('[portfolio] Found NAV Portfolio file:', navPortfolioEntry.entryName);
+    console.log('[portfolio] Found NAV Portfolio Notebook file:', navPortfolioEntry.entryName);
     return zip.readFile(navPortfolioEntry);
   } catch (error) {
     console.error('[portfolio] Error extracting ZIP:', error.message);
@@ -438,7 +192,7 @@ async function parseNAVPortfolioExcel(excelBuffer) {
 
     if (!portfolioValuationSheet) {
       console.error('[portfolio] Portfolio Valuation sheet not found');
-      return [];
+      return { positions: [], totalAumPercent: 0 };
     }
 
     console.log('[portfolio] Found sheet:', portfolioValuationSheet);
@@ -447,33 +201,39 @@ async function parseNAVPortfolioExcel(excelBuffer) {
     const data = XLSXFull.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
     console.log('[portfolio] Total rows in sheet:', data.length);
-    console.log('[portfolio] First 10 rows:', data.slice(0, 10));
+    console.log('[portfolio] First 10 rows:', JSON.stringify(data.slice(0, 10), null, 2));
 
     const positions = [];
+    let totalAumPercent = 0;
 
-    // Start from row 7 (index 6), extract ticker (column A) and quantity (column E, index 4)
+    // Start from row 7 (index 6)
+    // Column A (0) = Stock names
+    // Column B (1) = Currency
+    // Column C (2) = Ticker
+    // Column E (4) = Quantity
+    // Column M (12) = % of AUM
     for (let i = 6; i < data.length; i++) {
       const row = data[i];
 
-      // Column A - Security Description (contains ticker)
-      const securityDescription = row[0];
-      if (!securityDescription || securityDescription.toString().trim() === '') continue;
+      // Column A - Stock name
+      const stockName = row[0];
+      if (!stockName || stockName.toString().trim() === '') continue;
 
       // Skip rows that are subtotals or totals
-      const descStr = securityDescription.toString().toUpperCase();
-      if (descStr.includes('SUB TOTAL') || descStr.includes('GRAND TOTAL')) {
-        console.log('[portfolio] Stopping at row', i + 1, '- found total row');
+      const nameStr = stockName.toString().toUpperCase();
+      if (nameStr.includes('SUB TOTAL') || nameStr.includes('GRAND TOTAL') || nameStr.includes('TOTAL')) {
+        console.log('[portfolio] Stopping at row', i + 1, '- found total row:', nameStr);
         break;
       }
 
       // Column B - Currency
-      const currency = row[1] || 'AUD';
+      const currency = row[1] || 'USD';
 
       // Column C - Ticker
       const ticker = row[2];
       if (!ticker || ticker.toString().trim() === '') continue;
 
-      // Column E - Position (quantity) - index 4
+      // Column E - Quantity (index 4)
       const positionValue = row[4];
       const quantity = typeof positionValue === 'number'
         ? positionValue
@@ -481,22 +241,32 @@ async function parseNAVPortfolioExcel(excelBuffer) {
 
       if (quantity <= 0) continue;
 
+      // Column M - % of AUM (index 12)
+      const aumPercentValue = row[12];
+      const aumPercent = typeof aumPercentValue === 'number'
+        ? aumPercentValue * 100 // Excel stores percentages as decimals
+        : parseFloat(aumPercentValue?.toString().replace(/[%,]/g, '') || '0');
+
+      totalAumPercent += aumPercent;
+
       positions.push({
         ticker: ticker.toString().trim(),
-        securityDescription: securityDescription.toString().trim(),
+        stockName: stockName.toString().trim(),
         currency: currency.toString().trim(),
         quantity: quantity,
-        source: 'NAV'
+        aumPercent: aumPercent,
       });
 
-      console.log(`[portfolio] Row ${i + 1}: ${ticker} - ${quantity} shares (${currency})`);
+      console.log(`[portfolio] Row ${i + 1}: ${ticker} - ${quantity} shares (${currency}) - ${aumPercent.toFixed(2)}% AUM`);
     }
 
     console.log('[portfolio] NAV Portfolio parsed:', positions.length, 'positions');
-    return positions;
+    console.log('[portfolio] Total AUM%:', totalAumPercent.toFixed(2), '%, Cash%:', (100 - totalAumPercent).toFixed(2));
+
+    return { positions, totalAumPercent };
   } catch (error) {
     console.error('[portfolio] Error parsing NAV Portfolio Excel:', error.message);
-    return [];
+    return { positions: [], totalAumPercent: 0 };
   }
 }
 
@@ -688,16 +458,21 @@ async function fetchPortfolioData() {
       return null;
     }
 
-    // Parse Excel to get tickers and quantities
-    const navPositions = await parseNAVPortfolioExcel(excelBuffer);
+    // Parse Excel to get tickers, quantities, and % AUM
+    const parseResult = await parseNAVPortfolioExcel(excelBuffer);
 
-    if (!navPositions || navPositions.length === 0) {
+    if (!parseResult || !parseResult.positions || parseResult.positions.length === 0) {
       console.log('[portfolio] No positions found in NAV Portfolio');
       logUpdate('NAVPortfolio.xlsx', 'error', 'No positions found in Excel');
       return null;
     }
 
+    const { positions: navPositions, totalAumPercent } = parseResult;
     console.log(`[portfolio] Found ${navPositions.length} positions in NAV Portfolio`);
+
+    // Calculate cash % from 100% - sum of % AUM
+    const cashPercent = 100 - totalAumPercent;
+    console.log(`[portfolio] Cash %: ${cashPercent.toFixed(2)}%`);
 
     // Fetch live prices for each position
     console.log('[portfolio] Fetching live prices...');
@@ -722,7 +497,7 @@ async function fetchPortfolioData() {
       positions.push({
         ticker: position.ticker,
         symbol: priceData.yahooTicker,
-        securityDescription: position.securityDescription,
+        name: position.stockName,
         quantity: position.quantity,
         currentPrice: priceData.price,
         previousClose: priceData.previousClose,
@@ -733,23 +508,33 @@ async function fetchPortfolioData() {
         marketValueAUD: marketValueAUD,
         audConversionRate: audRate,
         pnl: pnl,
-        source: 'NAV',
+        portfolioWeight: position.aumPercent,
       });
 
       console.log(`[portfolio] ${position.ticker}: ${position.quantity} @ ${priceData.price} ${priceData.currency} = ${marketValueNative.toFixed(2)} (${marketValueAUD.toFixed(2)} AUD), Change: ${priceData.priceChangePercent.toFixed(2)}%, P&L: ${pnl.toFixed(2)}`);
     }
 
-    // Sort by market value in AUD descending
-    positions.sort((a, b) => b.marketValueAUD - a.marketValueAUD);
+    // Sort by portfolio weight descending
+    positions.sort((a, b) => b.portfolioWeight - a.portfolioWeight);
 
     const totalMarketValueAUD = positions.reduce((sum, pos) => sum + pos.marketValueAUD, 0);
 
+    // Calculate cash balance in AUD based on cash %
+    // If cash is X% of total, then: cashBalance / FUM = X/100
+    // FUM = totalMarketValue + cashBalance
+    // cashBalance = (totalMarketValue * cashPercent) / (100 - cashPercent)
+    let cashBalance = 0;
+    if (cashPercent > 0 && cashPercent < 100) {
+      cashBalance = (totalMarketValueAUD * cashPercent) / (100 - cashPercent);
+    }
+    console.log(`[portfolio] Calculated cash balance: $${cashBalance.toFixed(2)} AUD`);
+
     // Add cash position
-    if (cashBalance > 0) {
+    if (cashBalance > 0 || cashPercent > 0) {
       positions.push({
         ticker: 'CASH',
         symbol: 'CASH',
-        securityDescription: 'Cash Holdings',
+        name: 'Cash Holdings',
         quantity: 1,
         currentPrice: cashBalance,
         previousClose: cashBalance,
@@ -760,16 +545,11 @@ async function fetchPortfolioData() {
         marketValueAUD: cashBalance,
         audConversionRate: 1.0,
         pnl: 0,
-        source: 'NAV',
+        portfolioWeight: cashPercent,
       });
     }
 
     const fum = totalMarketValueAUD + cashBalance;
-
-    // Calculate portfolio weights (% of total including cash)
-    positions.forEach(pos => {
-      pos.portfolioWeight = fum > 0 ? (pos.marketValueAUD / fum) * 100 : 0;
-    });
 
     // Calculate total P&L and % change for the day
     const totalPnL = positions.reduce((sum, pos) => sum + (pos.pnl || 0), 0);
