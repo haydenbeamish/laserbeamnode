@@ -528,10 +528,19 @@ async function fetchLivePrice(ticker, currency) {
       return null;
     }
 
+    // Calculate daily change
+    const currentPrice = quote.regularMarketPrice;
+    const previousClose = quote.regularMarketPreviousClose || currentPrice;
+    const priceChange = currentPrice - previousClose;
+    const priceChangePercent = previousClose > 0 ? ((priceChange / previousClose) * 100) : 0;
+
     return {
       ticker: ticker,
       yahooTicker: yahooTicker,
-      price: quote.regularMarketPrice,
+      price: currentPrice,
+      previousClose: previousClose,
+      priceChange: priceChange,
+      priceChangePercent: priceChangePercent,
       currency: quote.currency || currency,
       name: quote.shortName || quote.longName || ticker,
     };
@@ -707,33 +716,72 @@ async function fetchPortfolioData() {
       const audRate = await fetchAUDConversionRate(priceData.currency);
       const marketValueAUD = marketValueNative * audRate;
 
+      // Calculate P&L (price change % x market value AUD)
+      const pnl = (priceData.priceChangePercent / 100) * marketValueAUD;
+
       positions.push({
         ticker: position.ticker,
         symbol: priceData.yahooTicker,
         securityDescription: position.securityDescription,
         quantity: position.quantity,
         currentPrice: priceData.price,
+        previousClose: priceData.previousClose,
+        priceChange: priceData.priceChange,
+        priceChangePercent: priceData.priceChangePercent,
         currency: priceData.currency,
         marketValue: marketValueNative,
         marketValueAUD: marketValueAUD,
         audConversionRate: audRate,
+        pnl: pnl,
         source: 'NAV',
       });
 
-      console.log(`[portfolio] ${position.ticker}: ${position.quantity} @ ${priceData.price} ${priceData.currency} = ${marketValueNative.toFixed(2)} (${marketValueAUD.toFixed(2)} AUD)`);
+      console.log(`[portfolio] ${position.ticker}: ${position.quantity} @ ${priceData.price} ${priceData.currency} = ${marketValueNative.toFixed(2)} (${marketValueAUD.toFixed(2)} AUD), Change: ${priceData.priceChangePercent.toFixed(2)}%, P&L: ${pnl.toFixed(2)}`);
     }
 
     // Sort by market value in AUD descending
     positions.sort((a, b) => b.marketValueAUD - a.marketValueAUD);
 
     const totalMarketValueAUD = positions.reduce((sum, pos) => sum + pos.marketValueAUD, 0);
+
+    // Add cash position
+    if (cashBalance > 0) {
+      positions.push({
+        ticker: 'CASH',
+        symbol: 'CASH',
+        securityDescription: 'Cash Holdings',
+        quantity: 1,
+        currentPrice: cashBalance,
+        previousClose: cashBalance,
+        priceChange: 0,
+        priceChangePercent: 0,
+        currency: 'AUD',
+        marketValue: cashBalance,
+        marketValueAUD: cashBalance,
+        audConversionRate: 1.0,
+        pnl: 0,
+        source: 'NAV',
+      });
+    }
+
     const fum = totalMarketValueAUD + cashBalance;
+
+    // Calculate portfolio weights (% of total including cash)
+    positions.forEach(pos => {
+      pos.portfolioWeight = fum > 0 ? (pos.marketValueAUD / fum) * 100 : 0;
+    });
+
+    // Calculate total P&L and % change for the day
+    const totalPnL = positions.reduce((sum, pos) => sum + (pos.pnl || 0), 0);
+    const totalChangePercent = fum > 0 ? (totalPnL / fum) * 100 : 0;
 
     const summary = {
       totalValue: totalMarketValueAUD,
       cashBalance,
       totalPositions: positions.length,
       fum,
+      totalPnL,
+      totalChangePercent,
     };
 
     logUpdate('NAVPortfolio.xlsx', 'success', `Fetched ${positions.length} positions from NAV Portfolio`);

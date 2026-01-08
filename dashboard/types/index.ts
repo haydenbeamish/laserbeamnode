@@ -4,10 +4,15 @@ export interface Position {
   securityDescription?: string
   quantity: number
   currentPrice: number
+  previousClose?: number
+  priceChange?: number
+  priceChangePercent?: number
   currency?: string
   marketValue: number
   marketValueAUD?: number
   audConversionRate?: number
+  pnl?: number
+  portfolioWeight?: number
   source: 'IB' | 'External' | 'NAV'
   stopLoss?: number
   stopLossType?: 'initial' | 'trailing' | 'breakeven'
@@ -21,6 +26,8 @@ export interface PortfolioSummary {
   cashBalance: number
   totalPositions: number
   fum: number
+  totalPnL?: number
+  totalChangePercent?: number
   maxDrawdown?: number
   totalRisk?: number
 }
