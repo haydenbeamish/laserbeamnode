@@ -34,5 +34,11 @@
     "file": "NAVPortfolio.xlsx",
     "status": "success",
     "message": "Fetched 21 positions from NAV Portfolio"
+  },
+  {
+    "timestamp": "2026-01-08T08:27:35.714Z",
+    "file": "NAVPortfolio.xlsx",
+    "status": "success",
+    "message": "Fetched 20 positions from NAV Portfolio"
   }
 ]

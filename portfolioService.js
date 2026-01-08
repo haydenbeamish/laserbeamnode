@@ -11,6 +11,70 @@ const path = require('path');
 const DATA_DIR = './data';
 const LOG_FILE = path.join(DATA_DIR, 'update-log.json');
 
+function consolidatePositions(positions) {
+  const grouped = {};
+
+  for (const pos of positions) {
+    const key = `${pos.ticker}|${pos.currency}`;
+
+    if (!grouped[key]) {
+      grouped[key] = {
+        ticker: pos.ticker,
+        symbol: pos.symbol,
+        name: pos.name,
+        quantity: 0,
+        marketValue: 0,
+        marketValueAUD: 0,
+        pnl: 0,
+        portfolioWeight: 0,
+        currency: pos.currency,
+        audConversionRate: pos.audConversionRate,
+        isLivePrice: true,
+        lots: [],
+      };
+    }
+
+    const g = grouped[key];
+    g.quantity += pos.quantity;
+    g.marketValue += pos.marketValue;
+    g.marketValueAUD += pos.marketValueAUD;
+    g.pnl += pos.pnl;
+    g.portfolioWeight += pos.portfolioWeight;
+    if (!pos.isLivePrice) g.isLivePrice = false;
+    if (pos.isLivePrice && !g.symbol) g.symbol = pos.symbol;
+    g.lots.push(pos);
+  }
+
+  const result = [];
+  for (const key in grouped) {
+    const g = grouped[key];
+    const currentPrice = g.quantity > 0 ? g.marketValue / g.quantity : 0;
+    const previousClose = g.lots.reduce((sum, lot) => sum + (lot.previousClose * lot.quantity), 0) / (g.quantity || 1);
+    const priceChange = currentPrice - previousClose;
+    const priceChangePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
+
+    result.push({
+      ticker: g.ticker,
+      symbol: g.symbol,
+      name: g.name,
+      quantity: g.quantity,
+      currentPrice: currentPrice,
+      previousClose: previousClose,
+      priceChange: priceChange,
+      priceChangePercent: priceChangePercent,
+      currency: g.currency,
+      marketValue: g.marketValue,
+      marketValueAUD: g.marketValueAUD,
+      audConversionRate: g.audConversionRate,
+      pnl: g.pnl,
+      portfolioWeight: g.portfolioWeight,
+      isLivePrice: g.isLivePrice,
+    });
+  }
+
+  return result;
+}
+
 const USER_EMAIL = process.env.USER_EMAIL || 'hayden@laserbeamcapital.com';
 const NAV_PORTFOLIO_EMAIL = 'Reporting@navbackoffice.com';
 const NAV_PORTFOLIO_SUBJECT = 'Daily Reports';
@@ -594,10 +658,14 @@ async function fetchPortfolioData() {
       console.log(`[portfolio] ${position.ticker}: ${position.quantity} @ ${currentPrice} ${currency} = ${marketValueNative.toFixed(2)} (${marketValueAUD.toFixed(2)} AUD), Change: ${priceChangePercent.toFixed(2)}%${isLivePrice ? '' : ' [STALE]'}`);
     }
 
-    // Sort by portfolio weight descending
-    positions.sort((a, b) => b.portfolioWeight - a.portfolioWeight);
+    // Consolidate duplicate tickers (e.g., two LLM entries become one)
+    const consolidatedPositions = consolidatePositions(positions);
+    console.log(`[portfolio] Consolidated ${positions.length} positions into ${consolidatedPositions.length}`);
 
-    const totalMarketValueAUD = positions.reduce((sum, pos) => sum + pos.marketValueAUD, 0);
+    // Sort by portfolio weight descending
+    consolidatedPositions.sort((a, b) => b.portfolioWeight - a.portfolioWeight);
+
+    const totalMarketValueAUD = consolidatedPositions.reduce((sum, pos) => sum + pos.marketValueAUD, 0);
 
     // Calculate cash balance in AUD based on cash %
     // If cash is X% of total, then: cashBalance / FUM = X/100
@@ -611,7 +679,7 @@ async function fetchPortfolioData() {
 
     // Add cash position
     if (cashBalance > 0 || cashPercent > 0) {
-      positions.push({
+      consolidatedPositions.push({
         ticker: 'CASH',
         symbol: 'CASH',
         name: 'Cash Holdings',
@@ -626,30 +694,31 @@ async function fetchPortfolioData() {
         audConversionRate: 1.0,
         pnl: 0,
         portfolioWeight: cashPercent,
+        isLivePrice: true,
       });
     }
 
     const fum = totalMarketValueAUD + cashBalance;
 
     // Calculate total P&L and % change for the day
-    const totalPnL = positions.reduce((sum, pos) => sum + (pos.pnl || 0), 0);
+    const totalPnL = consolidatedPositions.reduce((sum, pos) => sum + (pos.pnl || 0), 0);
     const totalChangePercent = fum > 0 ? (totalPnL / fum) * 100 : 0;
 
     const summary = {
       totalValue: totalMarketValueAUD,
       cashBalance,
-      totalPositions: positions.length,
+      totalPositions: consolidatedPositions.length,
       fum,
       totalPnL,
       totalChangePercent,
     };
 
-    logUpdate('NAVPortfolio.xlsx', 'success', `Fetched ${positions.length} positions from NAV Portfolio`);
+    logUpdate('NAVPortfolio.xlsx', 'success', `Fetched ${consolidatedPositions.length} positions from NAV Portfolio`);
 
     const updateTime = new Date().toISOString();
 
     return {
-      positions: positions,
+      positions: consolidatedPositions,
       summary,
       lastUpdate: {
         portfolio: updateTime,
