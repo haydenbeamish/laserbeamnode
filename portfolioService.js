@@ -3,6 +3,9 @@ const { ConfidentialClientApplication } = require('@azure/msal-node');
 require('isomorphic-fetch');
 const Papa = require('papaparse');
 const XLSX = require('read-excel-file/node');
+const XLSXFull = require('xlsx');
+const AdmZip = require('adm-zip');
+const YahooFinance = require('yahoo-finance2').default;
 const fs = require('fs');
 const path = require('path');
 
@@ -13,6 +16,9 @@ const IB_EMAIL = process.env.IB_EMAIL_ADDRESS || 'donotreply@interactivebrokers.
 const USER_EMAIL = process.env.USER_EMAIL || 'hayden@laserbeamcapital.com';
 const EXTERNAL_HOLDINGS_EMAIL = process.env.EXTERNAL_HOLDINGS_EMAIL || 'hayden@laserbeamcapital.com';
 const EXTERNAL_HOLDINGS_SUBJECT = 'External Holdings';
+const NAV_PORTFOLIO_EMAIL = 'Reporting@navbackoffice.com';
+const NAV_PORTFOLIO_SUBJECT = 'Daily Reports';
+const DATA_FOLDER = 'Data';
 
 let msalClient = null;
 
@@ -80,6 +86,55 @@ async function getEmailsFromSender(senderEmail, subject) {
     return filteredMessages;
   } catch (error) {
     console.error('[portfolio] Error fetching emails:', error.message);
+    throw error;
+  }
+}
+
+async function getEmailsFromFolder(folderName, senderEmail, subject) {
+  const client = await getGraphClient();
+
+  try {
+    // First, find the folder by name
+    const folders = await client
+      .api(`/users/${USER_EMAIL}/mailFolders`)
+      .get();
+
+    const targetFolder = folders.value.find(
+      (folder) => folder.displayName.toLowerCase() === folderName.toLowerCase()
+    );
+
+    if (!targetFolder) {
+      console.log(`[portfolio] Folder "${folderName}" not found`);
+      return [];
+    }
+
+    console.log(`[portfolio] Found folder "${folderName}" with ID:`, targetFolder.id);
+
+    // Fetch messages from the folder
+    const messages = await client
+      .api(`/users/${USER_EMAIL}/mailFolders/${targetFolder.id}/messages`)
+      .top(100)
+      .select('id,subject,receivedDateTime,hasAttachments,from')
+      .get();
+
+    let filteredMessages = messages.value.filter((msg) => {
+      const fromAddress = msg.from?.emailAddress?.address?.toLowerCase();
+      return fromAddress === senderEmail.toLowerCase();
+    });
+
+    if (subject) {
+      filteredMessages = filteredMessages.filter((msg) =>
+        msg.subject?.toLowerCase().includes(subject.toLowerCase())
+      );
+    }
+
+    filteredMessages.sort((a, b) => {
+      return new Date(b.receivedDateTime).getTime() - new Date(a.receivedDateTime).getTime();
+    });
+
+    return filteredMessages;
+  } catch (error) {
+    console.error('[portfolio] Error fetching emails from folder:', error.message);
     throw error;
   }
 }
@@ -295,20 +350,20 @@ function parseExternalHoldingsFromBody(htmlContent) {
 
     for (const line of lines) {
       const parts = line.split(/\t+|\s{2,}/).map(p => p.trim()).filter(p => p.length > 0);
-      
+
       if (parts.length < 3) continue;
-      
+
       let ticker = parts[0];
       const tickerMatch = ticker.match(/\(([^:]+):([^)]+)\)/);
       if (tickerMatch) {
         ticker = tickerMatch[2];
       }
-      
+
       if (/^(stock|ticker|symbol|company|name)$/i.test(ticker)) continue;
-      
+
       const sharesStr = parts[1];
       const quantity = parseFloat(sharesStr.replace(/,/g, '') || '0');
-      
+
       let marketValue = 0;
       if (parts.length >= 4) {
         const valueStr = parts[3];
@@ -337,6 +392,175 @@ function parseExternalHoldingsFromBody(htmlContent) {
   } catch (error) {
     console.error('[portfolio] Error parsing external holdings from body:', error.message);
     return [];
+  }
+}
+
+async function extractNAVPortfolioFromZip(zipBuffer) {
+  try {
+    const zip = new AdmZip(zipBuffer);
+    const zipEntries = zip.getEntries();
+
+    console.log('[portfolio] ZIP contains', zipEntries.length, 'files');
+    zipEntries.forEach(entry => {
+      console.log('[portfolio] ZIP file:', entry.entryName);
+    });
+
+    // Find Excel file with "NAV Portfolio" in the name
+    const navPortfolioEntry = zipEntries.find(entry => {
+      const name = entry.entryName.toLowerCase();
+      return (name.includes('nav portfolio') || name.includes('nav_portfolio')) &&
+             (name.endsWith('.xlsx') || name.endsWith('.xls'));
+    });
+
+    if (!navPortfolioEntry) {
+      console.error('[portfolio] No NAV Portfolio Excel file found in ZIP');
+      return null;
+    }
+
+    console.log('[portfolio] Found NAV Portfolio file:', navPortfolioEntry.entryName);
+    return zip.readFile(navPortfolioEntry);
+  } catch (error) {
+    console.error('[portfolio] Error extracting ZIP:', error.message);
+    return null;
+  }
+}
+
+async function parseNAVPortfolioExcel(excelBuffer) {
+  try {
+    const workbook = XLSXFull.read(excelBuffer, { type: 'buffer' });
+
+    console.log('[portfolio] Workbook sheets:', workbook.SheetNames);
+
+    // Find "Portfolio Valuation" sheet
+    const portfolioValuationSheet = workbook.SheetNames.find(name =>
+      name.toLowerCase().includes('portfolio valuation')
+    );
+
+    if (!portfolioValuationSheet) {
+      console.error('[portfolio] Portfolio Valuation sheet not found');
+      return [];
+    }
+
+    console.log('[portfolio] Found sheet:', portfolioValuationSheet);
+
+    const worksheet = workbook.Sheets[portfolioValuationSheet];
+    const data = XLSXFull.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+    console.log('[portfolio] Total rows in sheet:', data.length);
+    console.log('[portfolio] First 10 rows:', data.slice(0, 10));
+
+    const positions = [];
+
+    // Start from row 7 (index 6), extract ticker (column A) and quantity (column E, index 4)
+    for (let i = 6; i < data.length; i++) {
+      const row = data[i];
+
+      // Column A - Security Description (contains ticker)
+      const securityDescription = row[0];
+      if (!securityDescription || securityDescription.toString().trim() === '') continue;
+
+      // Skip rows that are subtotals or totals
+      const descStr = securityDescription.toString().toUpperCase();
+      if (descStr.includes('SUB TOTAL') || descStr.includes('GRAND TOTAL')) {
+        console.log('[portfolio] Stopping at row', i + 1, '- found total row');
+        break;
+      }
+
+      // Column B - Currency
+      const currency = row[1] || 'AUD';
+
+      // Column C - Ticker
+      const ticker = row[2];
+      if (!ticker || ticker.toString().trim() === '') continue;
+
+      // Column E - Position (quantity) - index 4
+      const positionValue = row[4];
+      const quantity = typeof positionValue === 'number'
+        ? positionValue
+        : parseFloat(positionValue?.toString().replace(/,/g, '') || '0');
+
+      if (quantity <= 0) continue;
+
+      positions.push({
+        ticker: ticker.toString().trim(),
+        securityDescription: securityDescription.toString().trim(),
+        currency: currency.toString().trim(),
+        quantity: quantity,
+        source: 'NAV'
+      });
+
+      console.log(`[portfolio] Row ${i + 1}: ${ticker} - ${quantity} shares (${currency})`);
+    }
+
+    console.log('[portfolio] NAV Portfolio parsed:', positions.length, 'positions');
+    return positions;
+  } catch (error) {
+    console.error('[portfolio] Error parsing NAV Portfolio Excel:', error.message);
+    return [];
+  }
+}
+
+async function fetchLivePrice(ticker, currency) {
+  try {
+    // Convert ticker to Yahoo Finance format based on currency/exchange
+    let yahooTicker = ticker;
+
+    // Australian stocks
+    if (currency === 'AUD' && !ticker.includes('.AX')) {
+      yahooTicker = `${ticker}.AX`;
+    }
+    // Hong Kong stocks
+    else if (currency === 'HKD' && !ticker.includes('.HK')) {
+      yahooTicker = `${ticker}.HK`;
+    }
+    // Canadian stocks
+    else if (currency === 'CAD' && !ticker.includes('.TO')) {
+      yahooTicker = `${ticker}.TO`;
+    }
+    // US stocks - no suffix needed for most US tickers
+
+    console.log(`[portfolio] Fetching price for ${ticker} (${yahooTicker}) in ${currency}`);
+
+    const quote = await YahooFinance.quote(yahooTicker);
+
+    if (!quote || !quote.regularMarketPrice) {
+      console.error(`[portfolio] No price found for ${yahooTicker}`);
+      return null;
+    }
+
+    return {
+      ticker: ticker,
+      yahooTicker: yahooTicker,
+      price: quote.regularMarketPrice,
+      currency: quote.currency || currency,
+      name: quote.shortName || quote.longName || ticker,
+    };
+  } catch (error) {
+    console.error(`[portfolio] Error fetching price for ${ticker}:`, error.message);
+    return null;
+  }
+}
+
+async function fetchAUDConversionRate(fromCurrency) {
+  try {
+    if (fromCurrency === 'AUD') return 1.0;
+
+    // Fetch forex rate from Yahoo Finance
+    const forexPair = `${fromCurrency}AUD=X`;
+    console.log(`[portfolio] Fetching forex rate: ${forexPair}`);
+
+    const quote = await YahooFinance.quote(forexPair);
+
+    if (!quote || !quote.regularMarketPrice) {
+      console.error(`[portfolio] No forex rate found for ${forexPair}`);
+      return 1.0; // Default to 1.0 if rate not found
+    }
+
+    console.log(`[portfolio] ${fromCurrency} to AUD rate: ${quote.regularMarketPrice}`);
+    return quote.regularMarketPrice;
+  } catch (error) {
+    console.error(`[portfolio] Error fetching forex rate for ${fromCurrency}:`, error.message);
+    return 1.0;
   }
 }
 
@@ -397,96 +621,139 @@ async function fetchPortfolioData() {
     return null;
   }
 
-  let ibPositions = [];
+  let positions = [];
   let cashBalance = 0;
-  let externalPositions = [];
 
   try {
-    console.log('[portfolio] Fetching Portfolio email from:', IB_EMAIL);
-    const portfolioEmail = await getLatestEmailWithAttachment(IB_EMAIL, '.Portfolio.');
+    console.log('[portfolio] Fetching NAV Portfolio from Data folder');
+    console.log('[portfolio] Looking for emails from:', NAV_PORTFOLIO_EMAIL);
+    console.log('[portfolio] With subject containing:', NAV_PORTFOLIO_SUBJECT);
 
-    if (portfolioEmail) {
-      const { attachment } = portfolioEmail;
-      console.log('[portfolio] Found Portfolio attachment:', attachment.name);
-      const csvContent = Buffer.from(attachment.contentBytes, 'base64').toString('utf-8');
+    const emails = await getEmailsFromFolder(DATA_FOLDER, NAV_PORTFOLIO_EMAIL, NAV_PORTFOLIO_SUBJECT);
 
-      ibPositions = parsePortfolioCSV(csvContent);
-      logUpdate('Portfolio.csv', 'success', `Fetched ${ibPositions.length} positions from IB Portfolio`);
-    } else {
-      console.log('[portfolio] No Portfolio email found');
-      logUpdate('Portfolio.csv', 'error', 'No email found with Portfolio attachment');
+    if (!emails || emails.length === 0) {
+      console.log('[portfolio] No Daily Reports email found in Data folder');
+      logUpdate('NAVPortfolio.xlsx', 'error', 'No email found in Data folder');
+      return null;
     }
-  } catch (error) {
-    console.error('[portfolio] Error fetching portfolio email:', error.message);
-    logUpdate('Portfolio.csv', 'error', `Failed to fetch: ${error.message}`);
-  }
 
-  try {
-    console.log('[portfolio] Fetching NAV email from:', IB_EMAIL);
-    const navEmail = await getLatestEmailWithAttachment(IB_EMAIL, '.NAV.');
+    console.log(`[portfolio] Found ${emails.length} matching emails, using most recent`);
+    const latestEmail = emails[0];
 
-    if (navEmail) {
-      const { attachment } = navEmail;
-      console.log('[portfolio] Found NAV attachment:', attachment.name);
-      const csvContent = Buffer.from(attachment.contentBytes, 'base64').toString('utf-8');
+    console.log('[portfolio] Latest email:', {
+      subject: latestEmail.subject,
+      received: latestEmail.receivedDateTime,
+      hasAttachments: latestEmail.hasAttachments,
+    });
 
-      cashBalance = parseNAVCSV(csvContent);
-      console.log('[portfolio] Cash balance:', cashBalance);
-      logUpdate('NAV.csv', 'success', `Fetched cash balance: $${cashBalance.toLocaleString()}`);
-    } else {
-      console.log('[portfolio] No NAV email found');
+    if (!latestEmail.hasAttachments) {
+      console.log('[portfolio] Email has no attachments');
+      logUpdate('NAVPortfolio.xlsx', 'error', 'Email has no attachments');
+      return null;
     }
-  } catch (error) {
-    console.error('[portfolio] Error fetching NAV email:', error.message);
-    logUpdate('NAV.csv', 'error', `Failed to fetch: ${error.message}`);
-  }
 
-  try {
-    console.log('[portfolio] Fetching External Holdings email from:', EXTERNAL_HOLDINGS_EMAIL);
-    const externalEmail = await getLatestExternalHoldingsEmail(EXTERNAL_HOLDINGS_EMAIL, EXTERNAL_HOLDINGS_SUBJECT);
+    // Get attachments
+    const attachments = await getEmailAttachments(latestEmail.id);
+    console.log(`[portfolio] Email has ${attachments.length} attachments`);
 
-    if (externalEmail) {
-      if (externalEmail.type === 'excel') {
-        console.log('[portfolio] Found External Holdings attachment:', externalEmail.attachment.name);
-        const buffer = Buffer.from(externalEmail.attachment.contentBytes, 'base64');
-        externalPositions = await parseExternalHoldingsFromExcel(buffer);
-        logUpdate('ExternalHoldings.xlsx', 'success', `Fetched ${externalPositions.length} external positions from Excel`);
-      } else if (externalEmail.type === 'body') {
-        console.log('[portfolio] Found External Holdings in email body');
-        externalPositions = parseExternalHoldingsFromBody(externalEmail.body);
-        logUpdate('ExternalHoldings.email', 'success', `Fetched ${externalPositions.length} external positions from email body`);
+    // Find ZIP attachment
+    const zipAttachment = attachments.find(att =>
+      att.name.toLowerCase().endsWith('.zip')
+    );
+
+    if (!zipAttachment) {
+      console.log('[portfolio] No ZIP attachment found');
+      logUpdate('NAVPortfolio.xlsx', 'error', 'No ZIP attachment found');
+      return null;
+    }
+
+    console.log('[portfolio] Found ZIP attachment:', zipAttachment.name);
+
+    // Extract ZIP
+    const zipBuffer = Buffer.from(zipAttachment.contentBytes, 'base64');
+    const excelBuffer = await extractNAVPortfolioFromZip(zipBuffer);
+
+    if (!excelBuffer) {
+      console.log('[portfolio] Failed to extract NAV Portfolio from ZIP');
+      logUpdate('NAVPortfolio.xlsx', 'error', 'Failed to extract Excel from ZIP');
+      return null;
+    }
+
+    // Parse Excel to get tickers and quantities
+    const navPositions = await parseNAVPortfolioExcel(excelBuffer);
+
+    if (!navPositions || navPositions.length === 0) {
+      console.log('[portfolio] No positions found in NAV Portfolio');
+      logUpdate('NAVPortfolio.xlsx', 'error', 'No positions found in Excel');
+      return null;
+    }
+
+    console.log(`[portfolio] Found ${navPositions.length} positions in NAV Portfolio`);
+
+    // Fetch live prices for each position
+    console.log('[portfolio] Fetching live prices...');
+    for (const position of navPositions) {
+      const priceData = await fetchLivePrice(position.ticker, position.currency);
+
+      if (!priceData) {
+        console.warn(`[portfolio] Skipping ${position.ticker} - no price data`);
+        continue;
       }
-    } else {
-      console.log('[portfolio] No External Holdings email found');
+
+      // Calculate market value in native currency
+      const marketValueNative = position.quantity * priceData.price;
+
+      // Get AUD conversion rate
+      const audRate = await fetchAUDConversionRate(priceData.currency);
+      const marketValueAUD = marketValueNative * audRate;
+
+      positions.push({
+        ticker: position.ticker,
+        symbol: priceData.yahooTicker,
+        securityDescription: position.securityDescription,
+        quantity: position.quantity,
+        currentPrice: priceData.price,
+        currency: priceData.currency,
+        marketValue: marketValueNative,
+        marketValueAUD: marketValueAUD,
+        audConversionRate: audRate,
+        source: 'NAV',
+      });
+
+      console.log(`[portfolio] ${position.ticker}: ${position.quantity} @ ${priceData.price} ${priceData.currency} = ${marketValueNative.toFixed(2)} (${marketValueAUD.toFixed(2)} AUD)`);
     }
+
+    // Sort by market value in AUD descending
+    positions.sort((a, b) => b.marketValueAUD - a.marketValueAUD);
+
+    const totalMarketValueAUD = positions.reduce((sum, pos) => sum + pos.marketValueAUD, 0);
+    const fum = totalMarketValueAUD + cashBalance;
+
+    const summary = {
+      totalValue: totalMarketValueAUD,
+      cashBalance,
+      totalPositions: positions.length,
+      fum,
+    };
+
+    logUpdate('NAVPortfolio.xlsx', 'success', `Fetched ${positions.length} positions from NAV Portfolio`);
+
+    const updateTime = new Date().toISOString();
+
+    return {
+      positions: positions,
+      summary,
+      lastUpdate: {
+        portfolio: updateTime,
+        nav: updateTime,
+      },
+    };
   } catch (error) {
-    console.error('[portfolio] Error fetching external holdings email:', error.message);
-    logUpdate('ExternalHoldings', 'error', `Failed to fetch: ${error.message}`);
+    console.error('[portfolio] Error fetching NAV Portfolio:', error.message);
+    console.error('[portfolio] Stack trace:', error.stack);
+    logUpdate('NAVPortfolio.xlsx', 'error', `Failed to fetch: ${error.message}`);
+    return null;
   }
-
-  const allPositions = [...ibPositions, ...externalPositions].sort((a, b) => b.marketValue - a.marketValue);
-
-  const totalMarketValue = allPositions.reduce((sum, pos) => sum + pos.marketValue, 0);
-  const fum = totalMarketValue + cashBalance;
-
-  const summary = {
-    totalValue: totalMarketValue,
-    cashBalance,
-    totalPositions: allPositions.length,
-    fum,
-  };
-
-  const portfolioUpdateTime = getLatestUpdateTime('Portfolio.csv');
-  const navUpdateTime = getLatestUpdateTime('NAV.csv');
-
-  return {
-    positions: allPositions,
-    summary,
-    lastUpdate: {
-      portfolio: portfolioUpdateTime,
-      nav: navUpdateTime,
-    },
-  };
 }
 
 async function getPortfolioData() {

@@ -35,19 +35,22 @@ export default function PortfolioTable({ positions, loading }: PortfolioTablePro
                 #
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
+                Ticker
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Quantity
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Currency
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Price
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Value
+                Market Value (Native)
               </th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Source
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Market Value (AUD)
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 % Portfolio
@@ -57,14 +60,15 @@ export default function PortfolioTable({ positions, loading }: PortfolioTablePro
           <tbody className="bg-[#1a1a1a] divide-y divide-[#2a2a2a]">
             {positions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                   No positions found
                 </td>
               </tr>
             ) : (
               positions.map((position, index) => {
-                const totalValue = positions.reduce((sum, p) => sum + p.marketValue, 0)
-                const percentage = totalValue > 0 ? (position.marketValue / totalValue) * 100 : 0
+                const totalValueAUD = positions.reduce((sum, p) => sum + (p.marketValueAUD || p.marketValue), 0)
+                const valueAUD = position.marketValueAUD || position.marketValue
+                const percentage = totalValueAUD > 0 ? (valueAUD / totalValueAUD) * 100 : 0
 
                 return (
                   <tr key={`${position.ticker}-${position.source}-${index}`} className="hover:bg-[#252525] transition-colors">
@@ -77,20 +81,19 @@ export default function PortfolioTable({ positions, loading }: PortfolioTablePro
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300 text-right">
                       {position.quantity.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                      <span className="px-2 py-1 bg-[#2a2a2a] text-gray-400 rounded text-xs font-medium">
+                        {position.currency || 'USD'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300 text-right">
-                      ${position.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {position.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300 text-right">
+                      {position.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-white text-right">
-                      ${position.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        position.source === 'IB'
-                          ? 'bg-blue-900/30 text-blue-400 border border-blue-800'
-                          : 'bg-green-900/30 text-green-400 border border-green-800'
-                      }`}>
-                        {position.source}
-                      </span>
+                      ${valueAUD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300 text-right">
                       {percentage.toFixed(2)}%

@@ -1,10 +1,14 @@
 export interface Position {
   ticker: string
   symbol: string
+  securityDescription?: string
   quantity: number
   currentPrice: number
+  currency?: string
   marketValue: number
-  source: 'IB' | 'External'
+  marketValueAUD?: number
+  audConversionRate?: number
+  source: 'IB' | 'External' | 'NAV'
   stopLoss?: number
   stopLossType?: 'initial' | 'trailing' | 'breakeven'
   trailingDays?: number
